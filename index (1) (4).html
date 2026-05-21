@@ -1,0 +1,3248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1a">
+<meta name="description" content="PillCare — Your trusted medication companion. Never miss a dose.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PillCare">
+<link rel="manifest" href="manifest.json">
+<title>PillCare — Medication Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════ */
+:root {
+  --bg:        #080d18;
+  --bg2:       #0d1422;
+  --surface:   #121929;
+  --surface2:  #172033;
+  --surface3:  #1d2840;
+  --border:    rgba(255,255,255,0.06);
+  --border2:   rgba(255,255,255,0.11);
+  --border3:   rgba(255,255,255,0.18);
+  --teal:      #4fd1c7;
+  --teal2:     #38b2a8;
+  --teal-dim:  rgba(79,209,199,0.12);
+  --teal-glow: rgba(79,209,199,0.18);
+  --amber:     #f6ad55;
+  --amber2:    #dd6b20;
+  --red:       #fc8181;
+  --red2:      #c53030;
+  --green:     #68d391;
+  --green2:    #276749;
+  --blue:      #63b3ed;
+  --purple:    #b794f4;
+  --text:      #edf2f7;
+  --text2:     #a0aec0;
+  --text3:     #5a6a84;
+  --text4:     #3a4a60;
+  --radius:    16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --shadow:    0 4px 24px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.7);
+  --glow-teal: 0 0 20px rgba(79,209,199,0.2);
+  --font-display: 'Lora', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;
+  --touch: 48px;
+  --fs-xs:  0.72rem;
+  --fs-sm:  0.82rem;
+  --fs-md:  0.92rem;
+  --fs-lg:  1.05rem;
+  --fs-xl:  1.3rem;
+  --fs-2xl: 1.7rem;
+}
+
+body.elderly {
+  --touch: 58px;
+  --radius: 20px;
+  --fs-xs:  0.82rem;
+  --fs-sm:  0.94rem;
+  --fs-md:  1.05rem;
+  --fs-lg:  1.2rem;
+  --fs-xl:  1.45rem;
+  --fs-2xl: 2rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -20vh; left: 50%;
+  transform: translateX(-50%);
+  width: 100vw; height: 70vh;
+  background: radial-gradient(ellipse at center, rgba(79,209,199,0.05) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 96px;
+  position: relative;
+  z-index: 1;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(10,14,24,0.94);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-top: 1px solid var(--border2);
+  display: flex;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 9px 4px 8px;
+  min-height: 58px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text3);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.nav-btn .nav-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.34,1.4,0.64,1);
+}
+.nav-btn.active { color: var(--teal); }
+.nav-btn.active .nav-icon { transform: translateY(-2px) scale(1.08); }
+.nav-btn:hover:not(.active) { color: var(--text2); }
+
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.page { display: none; padding-top: 18px; }
+.page.active {
+  display: block;
+  animation: fadeUp 0.3s ease both;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 4px;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.page-sub {
+  font-size: var(--fs-sm);
+  color: var(--text3);
+  margin-bottom: 20px;
+  font-weight: 400;
+}
+
+h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.card-sm {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.field label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  height: var(--touch);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field textarea {
+  height: auto;
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-dim);
+}
+
+.field input[type=number] { -moz-appearance: textfield; }
+.field input[type=number]::-webkit-outer-spin-button,
+.field input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.field select option { background: var(--surface); color: var(--text); }
+
+.field .hint {
+  font-size: var(--fs-xs);
+  color: var(--text3);
+  margin-top: 1px;
+  line-height: 1.4;
+}
+.field .hint.good { color: var(--teal); }
+.field .hint.bad  { color: var(--red); }
+.field .hint.warn { color: var(--amber); }
+
+.field input.error,
+.field select.error { border-color: var(--red); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 380px) { .form-row { grid-template-columns: 1fr; } }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: var(--touch);
+  padding: 0 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  user-select: none;
+  letter-spacing: 0.1px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  color: #080d18;
+  box-shadow: 0 2px 14px rgba(79,209,199,0.3);
+}
+.btn-primary:hover   { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(79,209,199,0.4); }
+.btn-primary:active  { transform: translateY(0); opacity: 1; }
+
+.btn-ghost {
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1.5px solid var(--border2);
+}
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+
+.btn-danger {
+  background: rgba(252,129,129,0.1);
+  color: var(--red);
+  border: 1.5px solid rgba(252,129,129,0.22);
+}
+.btn-danger:hover { background: rgba(252,129,129,0.18); border-color: rgba(252,129,129,0.4); }
+
+.btn-full { width: 100%; }
+
+.btn-icon {
+  width: var(--touch);
+  height: var(--touch);
+  min-width: var(--touch);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.btn-icon:hover  { background: var(--surface3); color: var(--text2); border-color: var(--border2); }
+.btn-icon.active { background: var(--teal-glow); color: var(--teal); border-color: rgba(79,209,199,0.3); }
+.btn-icon.danger:hover { background: rgba(252,129,129,0.1); color: var(--red); border-color: rgba(252,129,129,0.3); }
+
+.chips { display: flex; gap: 7px; flex-wrap: wrap; }
+
+.chip {
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+.chip:hover  { border-color: var(--teal); color: var(--teal); }
+.chip.active {
+  background: var(--teal-glow);
+  border-color: var(--teal);
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.day-chip {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  color: var(--text2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-body);
+}
+.day-chip.active {
+  background: var(--teal-glow);
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-teal   { background: rgba(79,209,199,0.12);  color: var(--teal); }
+.badge-amber  { background: rgba(246,173,85,0.12);  color: var(--amber); }
+.badge-red    { background: rgba(252,129,129,0.12); color: var(--red); }
+.badge-green  { background: rgba(104,211,145,0.12); color: var(--green); }
+.badge-muted  { background: rgba(255,255,255,0.05); color: var(--text3); }
+.badge-chain  { background: rgba(246,173,85,0.12);  color: var(--amber); border: 1px solid rgba(246,173,85,0.25); }
+
+.priority-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.priority-critical { background: var(--red);   box-shadow: 0 0 6px rgba(252,129,129,0.6); }
+.priority-high     { background: var(--amber); }
+.priority-normal   { background: var(--teal);  }
+.priority-low      { background: var(--text4); }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin: 22px 0 12px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.today-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 6px 0 20px;
+}
+
+.today-greeting {
+  font-size: var(--fs-sm);
+  color: var(--text3);
+  font-weight: 400;
+  margin-bottom: 2px;
+}
+.today-date {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.clock-display {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+.notif-banner {
+  background: linear-gradient(135deg, rgba(246,173,85,0.1), rgba(246,173,85,0.05));
+  border: 1px solid rgba(246,173,85,0.25);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.notif-banner.hidden { display: none; }
+.notif-banner-icon { font-size: 1.3rem; flex-shrink: 0; }
+.notif-banner-text { flex: 1; }
+.notif-banner-text strong { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--text); }
+.notif-banner-text small  { font-size: var(--fs-xs); color: var(--text3); }
+
+.install-banner {
+  background: linear-gradient(135deg, rgba(99,179,237,0.1), rgba(99,179,237,0.05));
+  border: 1px solid rgba(99,179,237,0.2);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  animation: fadeDown 0.4s ease;
+}
+.install-banner.hidden { display: none; }
+
+.sw-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  transition: all 0.3s;
+}
+.sw-status.ok   { background: rgba(104,211,145,0.1); color: var(--green);  border: 1px solid rgba(104,211,145,0.2); }
+.sw-status.warn { background: rgba(246,173,85,0.1);  color: var(--amber); border: 1px solid rgba(246,173,85,0.2); }
+.sw-status.err  { background: rgba(252,129,129,0.1); color: var(--red);   border: 1px solid rgba(252,129,129,0.2); }
+.sw-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+
+.adherence-bar-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.adherence-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--fs-sm);
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+.adherence-label strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text);
+}
+.adherence-track {
+  height: 8px;
+  background: var(--surface3);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.adherence-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1), background 0.5s ease;
+  background: linear-gradient(90deg, var(--teal), var(--green));
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 10px;
+  text-align: center;
+}
+.s-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.s-label {
+  font-size: var(--fs-xs);
+  color: var(--text3);
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+.pill-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+  animation: slideIn 0.28s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.pill-card:hover { border-color: var(--border2); }
+.pill-card.priority-critical-card { border-left: 3px solid var(--red); }
+.pill-card.priority-high-card     { border-left: 3px solid var(--amber); }
+.pill-card.all-taken { opacity: 0.42; }
+
+.pill-card.priority-critical-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--red), transparent);
+  opacity: 0.5;
+}
+
+.pill-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pill-color-strip {
+  width: 4px;
+  min-height: 42px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.pill-header-info { flex: 1; min-width: 0; }
+
+.pill-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.pill-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pill-meta-tag {
+  font-size: var(--fs-xs);
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.pill-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
+.dose-rows { display: flex; flex-direction: column; gap: 7px; }
+
+.dose-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  transition: border-color 0.15s, background 0.15s, opacity 0.2s;
+}
+.dose-row.is-taken   { opacity: 0.48; }
+.dose-row.is-soon    { border-color: rgba(246,173,85,0.3); }
+.dose-row.is-now     { border-color: rgba(79,209,199,0.4); background: rgba(79,209,199,0.04); }
+.dose-row.is-chain   { border-color: rgba(246,173,85,0.45); background: rgba(246,173,85,0.04); }
+.dose-row.is-overdue { border-color: rgba(252,129,129,0.3); background: rgba(252,129,129,0.03); }
+
+.dose-time-label {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text);
+  min-width: 52px;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.dose-food-tag {
+  font-size: var(--fs-xs);
+  color: var(--text3);
+  background: var(--surface3);
+  border-radius: 6px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+
+.dose-row-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.take-btn {
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  background: transparent;
+  color: var(--text3);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.34,1.4,0.64,1);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+}
+.take-btn:hover { border-color: var(--teal); color: var(--teal); transform: scale(1.08); }
+.take-btn.taken {
+  background: var(--green);
+  border-color: var(--green);
+  color: #0a1f14;
+  transform: scale(1);
+}
+.take-btn.taken:hover { background: var(--green2); transform: scale(1.05); }
+.take-btn:active { transform: scale(0.94) !important; }
+
+.snooze-btn {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface3);
+  color: var(--text3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.snooze-btn:hover { border-color: var(--amber); color: var(--amber); background: rgba(246,173,85,0.08); }
+
+.critical-alert {
+  background: linear-gradient(135deg, rgba(252,129,129,0.15), rgba(229,62,62,0.08));
+  border: 1px solid rgba(252,129,129,0.35);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: pulseAlert 2.5s ease-in-out infinite;
+}
+.critical-alert.hidden { display: none; }
+.critical-alert-icon { font-size: 1.4rem; flex-shrink: 0; }
+.critical-alert-text strong { display: block; font-size: var(--fs-md); font-weight: 600; color: var(--red); }
+.critical-alert-text span   { font-size: var(--fs-xs); color: var(--text2); }
+
+@keyframes pulseAlert {
+  0%, 100% { border-color: rgba(252,129,129,0.35); }
+  50%       { border-color: rgba(252,129,129,0.65); box-shadow: 0 0 16px rgba(252,129,129,0.12); }
+}
+
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.sheet-overlay.open { opacity: 1; pointer-events: all; }
+
+.sheet {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 0 18px calc(40px + env(safe-area-inset-bottom, 0px));
+  z-index: 201;
+  max-height: 93dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.32, 1.1, 0.64, 1);
+  max-width: 720px;
+  margin: 0 auto;
+}
+.sheet.open { transform: translateY(0); }
+
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border3);
+  border-radius: 4px;
+  margin: 14px auto 22px;
+}
+
+.sheet-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  margin-bottom: 22px;
+  color: var(--text);
+}
+
+.color-picker { display: flex; gap: 9px; flex-wrap: wrap; }
+.color-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.color-dot:hover    { transform: scale(1.14); }
+.color-dot.selected { border-color: white; transform: scale(1.2); box-shadow: 0 0 8px rgba(255,255,255,0.3); }
+
+.dose-preview-box {
+  background: rgba(79,209,199,0.05);
+  border: 1px solid rgba(79,209,199,0.15);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: var(--fs-sm);
+  color: var(--text3);
+  line-height: 1.7;
+  min-height: 44px;
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+.dose-preview-box .times { color: var(--teal); font-weight: 600; }
+
+.time-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px,1fr)); gap: 8px; }
+.time-slot {
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.time-slot input[type=time] {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0;
+  height: auto;
+  width: 100%;
+  outline: none;
+}
+.time-slot-remove {
+  background: none;
+  border: none;
+  color: var(--text4);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.time-slot-remove:hover { color: var(--red); }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 28px 22px;
+  max-width: 360px;
+  width: 100%;
+  transform: scale(0.9) translateY(10px);
+  transition: transform 0.28s cubic-bezier(0.34,1.2,0.64,1);
+}
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+.modal-icon  { font-size: 2.4rem; margin-bottom: 14px; text-align: center; }
+.modal-title { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; text-align: center; margin-bottom: 8px; }
+.modal-body  { font-size: var(--fs-sm); color: var(--text2); text-align: center; line-height: 1.65; margin-bottom: 22px; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions .btn { flex: 1; }
+
+.history-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.history-filters::-webkit-scrollbar { display: none; }
+
+.history-date-group { margin-bottom: 20px; }
+.history-date-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.history-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  transition: opacity 0.15s;
+}
+.history-entry:last-child { border-bottom: none; }
+.h-pill-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.h-pill-name { flex: 1; font-size: var(--fs-md); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-dose      { font-size: var(--fs-xs); color: var(--text3); flex-shrink: 0; }
+.h-time      { font-size: var(--fs-xs); color: var(--text3); font-family: var(--font-display); flex-shrink: 0; }
+.h-status    { font-size: var(--fs-xs); padding: 2px 9px; border-radius: 7px; font-weight: 600; flex-shrink: 0; }
+.h-taken     { background: rgba(104,211,145,0.12); color: var(--green); }
+.h-missed    { background: rgba(252,129,129,0.12); color: var(--red); }
+
+.week-chart {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  height: 64px;
+  margin: 14px 0 8px;
+}
+.week-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.week-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.6s cubic-bezier(0.4,0,0.2,1);
+  min-height: 4px;
+}
+.week-bar.good    { background: linear-gradient(180deg, var(--teal), var(--teal2)); }
+.week-bar.partial { background: linear-gradient(180deg, var(--amber), var(--amber2)); }
+.week-bar.none    { background: var(--surface3); }
+.week-day-label   { font-size: var(--fs-xs); color: var(--text3); font-weight: 600; }
+.week-pct         { font-size: 0.6rem; color: var(--text3); }
+
+.settings-section { margin-bottom: 28px; }
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 14px;
+  min-height: var(--touch);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-info { flex: 1; }
+.setting-label { font-size: var(--fs-md); font-weight: 500; color: var(--text); }
+.setting-desc  { font-size: var(--fs-xs); color: var(--text3); margin-top: 2px; line-height: 1.4; }
+
+.toggle {
+  width: 50px; height: 28px;
+  background: var(--surface3);
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle::after {
+  content: '';
+  width: 22px; height: 22px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: transform 0.22s cubic-bezier(0.34,1.3,0.64,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+}
+.toggle.on { background: var(--teal); }
+.toggle.on::after { transform: translateX(22px); }
+
+.diag-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  gap: 10px;
+}
+.diag-row:last-child { border-bottom: none; }
+.diag-key { color: var(--text3); }
+.diag-val { font-weight: 600; font-family: var(--font-display); text-align: right; }
+.diag-ok   { color: var(--green); }
+.diag-warn { color: var(--amber); }
+.diag-err  { color: var(--red); }
+
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+  overflow-y: auto;
+}
+.onboarding-overlay.hidden { display: none; }
+
+.onboarding-logo {
+  font-size: 4.5rem;
+  margin-bottom: 16px;
+  animation: scaleIn 0.5s cubic-bezier(0.34,1.3,0.64,1);
+}
+.onboarding-title {
+  font-family: var(--font-display);
+  font-size: calc(var(--fs-2xl) * 1.1);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.onboarding-sub {
+  font-size: var(--fs-md);
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 36px;
+  max-width: 340px;
+}
+
+.onboarding-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 36px;
+  text-align: left;
+}
+.onboarding-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 15px 16px;
+  animation: slideIn 0.4s ease both;
+}
+.onboarding-step:nth-child(1) { animation-delay: 0.1s; }
+.onboarding-step:nth-child(2) { animation-delay: 0.2s; }
+.onboarding-step:nth-child(3) { animation-delay: 0.3s; }
+
+.step-icon { font-size: 1.6rem; flex-shrink: 0; }
+.step-text strong {
+  display: block;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.step-text span { font-size: var(--fs-xs); color: var(--text3); line-height: 1.4; }
+
+.undo-toast {
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 150;
+  transition: transform 0.38s cubic-bezier(0.34,1.3,0.64,1);
+  min-width: 270px;
+  max-width: calc(100vw - 32px);
+  box-shadow: var(--shadow-lg);
+}
+.undo-toast.show { transform: translateX(-50%) translateY(0); }
+.undo-toast-msg  { flex: 1; font-size: var(--fs-sm); color: var(--text2); }
+.undo-btn {
+  color: var(--teal);
+  font-weight: 700;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  padding: 4px 0;
+  letter-spacing: 0.3px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#toast {
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  z-index: 500;
+  transition: transform 0.3s cubic-bezier(0.34,1.3,0.64,1);
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+.fab {
+  position: fixed;
+  bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 14px);
+  right: 20px;
+  width: 58px; height: 58px;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 1.7rem;
+  color: #050a14;
+  font-weight: 700;
+  box-shadow: 0 4px 24px rgba(79,209,199,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  transition: transform 0.22s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fab:hover  { transform: scale(1.09); box-shadow: 0 6px 32px rgba(79,209,199,0.55); }
+.fab:active { transform: scale(0.95); }
+
+.extra-fields { display: none; }
+.extra-fields.show { display: block; animation: fadeUp 0.2s ease; }
+
+.section-sep { height: 1px; background: var(--border); margin: 18px 0; }
+
+.archived-section-title {
+  font-size: var(--fs-xs);
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  margin: 18px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.archived-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.empty-state {
+  text-align: center;
+  padding: 52px 20px;
+  color: var(--text3);
+}
+.empty-state .empty-icon { font-size: 3.5rem; opacity: 0.28; margin-bottom: 16px; }
+.empty-state h3 {
+  color: var(--text2);
+  margin-bottom: 10px;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+}
+.empty-state p  { font-size: var(--fs-sm); line-height: 1.75; }
+.empty-state .btn { margin-top: 22px; }
+
+.update-banner {
+  background: linear-gradient(135deg, rgba(183,148,244,0.1), rgba(99,179,237,0.1));
+  border: 1px solid rgba(183,148,244,0.25);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+.update-banner.hidden { display: none; }
+
+:focus-visible {
+  outline: 2.5px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+@keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+@keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:none; } }
+@keyframes slideIn  { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:none; } }
+@keyframes scaleIn  { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }
+@keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+@keyframes takePop  { 0% { transform:scale(1); } 40% { transform:scale(1.22); } 100% { transform:scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ ONBOARDING ═══════════ -->
+<div class="onboarding-overlay hidden" id="onboarding" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+  <div class="onboarding-logo" aria-hidden="true">💊</div>
+  <h1 class="onboarding-title" id="onboardingTitle">Welcome to PillCare</h1>
+  <p class="onboarding-sub">Your trusted medication companion. Smart reminders that keep you on track, every day.</p>
+  <div class="onboarding-steps" role="list">
+    <div class="onboarding-step" role="listitem">
+      <div class="step-icon" aria-hidden="true">💊</div>
+      <div class="step-text">
+        <strong>Add your medications</strong>
+        <span>Set flexible schedules — daily, weekly, or custom intervals</span>
+      </div>
+    </div>
+    <div class="onboarding-step" role="listitem">
+      <div class="step-icon" aria-hidden="true">🔔</div>
+      <div class="step-text">
+        <strong>Get reminded every time</strong>
+        <span>Notifications repeat until you confirm — nothing gets missed</span>
+      </div>
+    </div>
+    <div class="onboarding-step" role="listitem">
+      <div class="step-icon" aria-hidden="true">📊</div>
+      <div class="step-text">
+        <strong>Track your adherence</strong>
+        <span>See your history, streaks, and weekly progress at a glance</span>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary btn-full" style="max-width:340px;font-size:var(--fs-lg);height:54px;border-radius:14px;" onclick="finishOnboarding()">
+    Get Started →
+  </button>
+  <p style="margin-top:16px;font-size:var(--fs-xs);color:var(--text3);">Your data stays on your device. Nothing is ever shared.</p>
+</div>
+
+<!-- ═══════════ MAIN APP ═══════════ -->
+<div class="app-shell">
+
+  <!-- TODAY PAGE -->
+  <section class="page active" id="page-today" aria-label="Today's medications" aria-live="polite">
+
+    <div class="today-header">
+      <div>
+        <div class="today-greeting" id="greeting" aria-live="off">Good morning</div>
+        <div class="today-date" id="todayDate" aria-live="off"></div>
+      </div>
+      <div class="clock-display" id="clock" aria-label="Current time" aria-live="off">--:--</div>
+    </div>
+
+    <div class="critical-alert hidden" id="criticalAlert" role="alert">
+      <div class="critical-alert-icon" aria-hidden="true">⚠️</div>
+      <div class="critical-alert-text">
+        <strong id="criticalAlertText">Critical medication due</strong>
+        <span>Please take your medication now</span>
+      </div>
+    </div>
+
+    <div class="notif-banner hidden" id="notifBanner" role="alert" aria-live="assertive">
+      <div class="notif-banner-icon" aria-hidden="true">🔔</div>
+      <div class="notif-banner-text">
+        <strong>Enable Notifications</strong>
+        <small>Required for dose reminders to work</small>
+      </div>
+      <button class="btn btn-primary" style="padding:0 16px;font-size:var(--fs-xs);height:38px;border-radius:8px;" onclick="requestNotifPermission()">Allow</button>
+      <button class="btn-icon" style="width:32px;height:32px;font-size:0.85rem;flex-shrink:0;" onclick="dismissNotifBanner()" aria-label="Dismiss notification prompt">✕</button>
+    </div>
+
+    <div class="install-banner hidden" id="installBanner">
+      <div style="font-size:1.5rem" aria-hidden="true">📲</div>
+      <div style="flex:1">
+        <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text)">Install PillCare</div>
+        <div style="font-size:var(--fs-xs);color:var(--text3);margin-top:2px">Add to home screen for offline access &amp; better notifications</div>
+      </div>
+      <button class="btn btn-ghost" style="padding:0 14px;font-size:var(--fs-xs);height:36px;border-radius:8px;" onclick="installApp()">Install</button>
+      <button class="btn-icon" style="width:36px;height:36px;font-size:0.9rem;" onclick="dismissInstall()" aria-label="Dismiss install banner">✕</button>
+    </div>
+
+    <div class="update-banner hidden" id="updateBanner" onclick="reloadForUpdate()" role="button" tabindex="0" aria-label="Update available, click to refresh">
+      <div style="font-size:1.2rem" aria-hidden="true">🔄</div>
+      <div style="flex:1">
+        <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text)">Update Available</div>
+        <div style="font-size:var(--fs-xs);color:var(--text3);margin-top:1px">Tap to refresh with the latest version</div>
+      </div>
+    </div>
+
+    <div class="adherence-bar-wrap" id="adherenceWrap" style="display:none">
+      <div class="adherence-label">
+        <span style="font-weight:500;color:var(--text2)">Today's adherence</span>
+        <strong id="adherencePct">–</strong>
+      </div>
+      <div class="adherence-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="adherenceBar">
+        <div class="adherence-fill" id="adherenceFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="stats-row" aria-label="Today's dose statistics">
+      <div class="stat-card" role="status">
+        <div class="s-num" id="sTaken">0</div>
+        <div class="s-label">Taken</div>
+      </div>
+      <div class="stat-card" role="status">
+        <div class="s-num" id="sDue">0</div>
+        <div class="s-label">Remaining</div>
+      </div>
+      <div class="stat-card" role="status">
+        <div class="s-num" id="sStreak">0</div>
+        <div class="s-label">Day Streak</div>
+      </div>
+    </div>
+
+    <div id="pillList" aria-label="Today's medication list"></div>
+
+  </section>
+
+  <!-- MEDS PAGE -->
+  <section class="page" id="page-meds" aria-label="All medications">
+    <div style="padding-top:22px">
+      <h1 class="page-title">Medications</h1>
+      <p class="page-sub" id="medsCount">Loading…</p>
+    </div>
+    <div id="medsList"></div>
+  </section>
+
+  <!-- HISTORY PAGE -->
+  <section class="page" id="page-history" aria-label="Medication history">
+    <div style="padding-top:22px">
+      <h1 class="page-title">History</h1>
+      <p class="page-sub">Your adherence log</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="font-size:var(--fs-sm)">7-Day Adherence</h3>
+        <span id="weekAdherencePct" style="font-family:var(--font-display);font-size:var(--fs-xl);font-weight:700;color:var(--teal)">–</span>
+      </div>
+      <div class="week-chart" id="weekChart" role="img" aria-label="7-day adherence chart"></div>
+    </div>
+
+    <div class="history-filters" role="group" aria-label="Filter history by status">
+      <button class="chip active" onclick="setHistoryFilter(this,'all')">All</button>
+      <button class="chip" onclick="setHistoryFilter(this,'taken')">✅ Taken</button>
+      <button class="chip" onclick="setHistoryFilter(this,'missed')">❌ Missed</button>
+    </div>
+
+    <div id="historyList" aria-live="polite"></div>
+  </section>
+
+  <!-- SETTINGS PAGE -->
+  <section class="page" id="page-settings" aria-label="Settings">
+    <div style="padding-top:22px">
+      <h1 class="page-title">Settings</h1>
+      <p class="page-sub">Preferences &amp; data management</p>
+    </div>
+
+    <div class="settings-section">
+      <div class="divider">Accessibility</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Elderly Mode</div>
+            <div class="setting-desc">Larger text, bigger touch targets, higher contrast</div>
+          </div>
+          <button class="toggle" id="toggleElderly"
+            onclick="toggleSetting('elderly')"
+            role="switch"
+            aria-label="Toggle elderly mode"
+            aria-checked="false"></button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Reduce Motion</div>
+            <div class="setting-desc">Disable animations for vestibular sensitivity</div>
+          </div>
+          <button class="toggle" id="toggleMotion"
+            onclick="toggleSetting('reducedMotion')"
+            role="switch"
+            aria-label="Toggle reduced motion"
+            aria-checked="false"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="divider">Notifications</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Test Notification</div>
+            <div class="setting-desc">Send a test to verify reminders are working</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:0 14px;font-size:var(--fs-xs);height:38px;border-radius:8px;" onclick="sendTestNotif()">🔔 Test</button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Request Permission</div>
+            <div class="setting-desc">Allow notifications if previously denied</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:0 14px;font-size:var(--fs-xs);height:38px;border-radius:8px;" onclick="requestNotifPermission()">Enable</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="divider">Data &amp; Backup</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Export Backup</div>
+            <div class="setting-desc">Download all medications and history as JSON</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:0 14px;font-size:var(--fs-xs);height:38px;border-radius:8px;" onclick="exportData()">Export</button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Import Backup</div>
+            <div class="setting-desc">Restore from a previously exported file</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:0 14px;font-size:var(--fs-xs);height:38px;border-radius:8px;" onclick="document.getElementById('importFile').click()">Import</button>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" aria-label="Import backup file">
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Clear All Data</div>
+            <div class="setting-desc">Permanently delete all medications and history</div>
+          </div>
+          <button class="btn btn-danger" style="padding:0 14px;font-size:var(--fs-xs);height:38px;border-radius:8px;" onclick="confirmClearAll()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="divider">System Diagnostics</div>
+      <div class="card">
+        <div class="diag-row"><span class="diag-key">Notifications</span><span class="diag-val" id="diagNotif">–</span></div>
+        <div class="diag-row"><span class="diag-key">Service Worker</span><span class="diag-val" id="diagSW">–</span></div>
+        <div class="diag-row"><span class="diag-key">Last notification</span><span class="diag-val" id="diagLastNotif">–</span></div>
+        <div class="diag-row"><span class="diag-key">Active chains</span><span class="diag-val" id="diagChains">–</span></div>
+        <div class="diag-row"><span class="diag-key">Snoozed</span><span class="diag-val" id="diagSnooze">–</span></div>
+        <div class="diag-row"><span class="diag-key">PWA installed</span><span class="diag-val" id="diagPWA">–</span></div>
+        <div class="diag-row"><span class="diag-key">Storage used</span><span class="diag-val" id="storageSize">–</span></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="divider">Reminder Status</div>
+      <div id="swStatus" class="sw-status warn" role="status" aria-live="polite" style="margin-bottom:0">
+        <span class="sw-dot" aria-hidden="true"></span> Setting up…
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="divider">About</div>
+      <div class="card">
+        <div class="diag-row">
+          <span class="diag-key">PillCare</span>
+          <span class="diag-val" style="color:var(--text2)">v9.0 · Local-first</span>
+        </div>
+        <div class="diag-row">
+          <span class="diag-key">Data privacy</span>
+          <span class="diag-val" style="color:var(--green)">100% on-device</span>
+        </div>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--text3);text-align:center;margin-top:12px;line-height:1.6;">
+        PillCare stores all data locally on your device.<br>Nothing is ever sent to any server.
+      </p>
+    </div>
+  </section>
+
+</div><!-- /app-shell -->
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+  <button class="nav-btn active" id="nav-today" onclick="showPage('today',this)" aria-label="Today's medications" aria-current="page">
+    <span class="nav-icon" aria-hidden="true">🏠</span>
+    Today
+  </button>
+  <button class="nav-btn" id="nav-meds" onclick="showPage('meds',this)" aria-label="All medications">
+    <span class="nav-icon" aria-hidden="true">💊</span>
+    Meds
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="showPage('history',this)" aria-label="Medication history">
+    <span class="nav-icon" aria-hidden="true">📊</span>
+    History
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showPage('settings',this)" aria-label="Settings">
+    <span class="nav-icon" aria-hidden="true">⚙️</span>
+    Settings
+  </button>
+</nav>
+
+<!-- FAB -->
+<button class="fab" onclick="openSheet()" aria-label="Add new medication">＋</button>
+
+<!-- ADD / EDIT SHEET -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <div class="sheet-title" id="sheetTitle">Add Medication</div>
+
+  <div class="form-row">
+    <div class="field">
+      <label for="fName">Medication Name <span aria-hidden="true">*</span></label>
+      <input type="text" id="fName" placeholder="e.g. Metformin" maxlength="50" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="fDose">Dosage</label>
+      <input type="text" id="fDose" placeholder="e.g. 500mg" maxlength="24">
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="field">
+      <label for="fCategory">Category</label>
+      <select id="fCategory">
+        <option value="general">💊 General</option>
+        <option value="heart">❤️ Heart / Blood pressure</option>
+        <option value="diabetes">🩸 Diabetes</option>
+        <option value="pain">🩹 Pain relief</option>
+        <option value="vitamin">🌿 Vitamins / Supplements</option>
+        <option value="mental">🧠 Mental health</option>
+        <option value="antibiotic">🦠 Antibiotic</option>
+        <option value="other">📦 Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fPriority">Priority</label>
+      <select id="fPriority">
+        <option value="normal">Normal</option>
+        <option value="high">⬆️ High</option>
+        <option value="critical">⚠️ Critical</option>
+        <option value="low">⬇️ Low</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Food timing</label>
+    <div class="chips" id="foodChips" role="group" aria-label="Select food timing">
+      <button type="button" class="chip active" data-food="any"    onclick="pickFood(this)">Any time</button>
+      <button type="button" class="chip"        data-food="before" onclick="pickFood(this)">🍽 Before food</button>
+      <button type="button" class="chip"        data-food="after"  onclick="pickFood(this)">🍽 After food</button>
+      <button type="button" class="chip"        data-food="empty"  onclick="pickFood(this)">⬜ Empty stomach</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="fFreq">Frequency</label>
+    <select id="fFreq" onchange="onFreqChange()">
+      <option value="once">Once daily</option>
+      <option value="custom">Custom (X times a day)</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    </select>
+  </div>
+
+  <!-- ONCE DAILY -->
+  <div id="fieldOnce" class="extra-fields show">
+    <div class="field">
+      <label for="fTimeOnce">Reminder Time <span aria-hidden="true">*</span></label>
+      <input type="time" id="fTimeOnce">
+    </div>
+    <div class="field">
+      <label>Quick presets</label>
+      <div class="chips">
+        <button type="button" class="chip" onclick="setPreset('fTimeOnce','07:30')">🌅 Morning</button>
+        <button type="button" class="chip" onclick="setPreset('fTimeOnce','13:00')">☀️ Afternoon</button>
+        <button type="button" class="chip" onclick="setPreset('fTimeOnce','21:00')">🌙 Night</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM -->
+  <div id="fieldCustom" class="extra-fields">
+    <div class="form-row">
+      <div class="field">
+        <label for="fCount">Times per day <span aria-hidden="true">*</span></label>
+        <input type="number" id="fCount" placeholder="e.g. 3" min="2" max="12" oninput="onCustomInput()">
+        <span class="hint good" id="intervalHint" aria-live="polite"></span>
+      </div>
+      <div class="field">
+        <label for="fTimeCustom">1st Dose Time <span aria-hidden="true">*</span></label>
+        <input type="time" id="fTimeCustom" oninput="onCustomInput()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Quick presets</label>
+      <div class="chips">
+        <button type="button" class="chip" onclick="setCustomPreset(2,'08:00')">2× (8am, 8pm)</button>
+        <button type="button" class="chip" onclick="setCustomPreset(3,'08:00')">3× daily</button>
+        <button type="button" class="chip" onclick="setCustomPreset(4,'08:00')">4× daily</button>
+      </div>
+    </div>
+    <div class="dose-preview-box" id="dosePreview" aria-live="polite">⏱ Set count and time above to preview your doses</div>
+  </div>
+
+  <!-- WEEKLY -->
+  <div id="fieldWeekly" class="extra-fields">
+    <div class="field">
+      <label>Day(s) of week <span aria-hidden="true">*</span></label>
+      <div class="chips" id="weekDayPicker" style="gap:7px" role="group" aria-label="Select days of week">
+        <button type="button" class="day-chip" data-day="0" onclick="toggleDay(this)" aria-pressed="false">Su</button>
+        <button type="button" class="day-chip" data-day="1" onclick="toggleDay(this)" aria-pressed="false">Mo</button>
+        <button type="button" class="day-chip" data-day="2" onclick="toggleDay(this)" aria-pressed="false">Tu</button>
+        <button type="button" class="day-chip" data-day="3" onclick="toggleDay(this)" aria-pressed="false">We</button>
+        <button type="button" class="day-chip" data-day="4" onclick="toggleDay(this)" aria-pressed="false">Th</button>
+        <button type="button" class="day-chip" data-day="5" onclick="toggleDay(this)" aria-pressed="false">Fr</button>
+        <button type="button" class="day-chip" data-day="6" onclick="toggleDay(this)" aria-pressed="false">Sa</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="fTimeWeekly">Reminder Time <span aria-hidden="true">*</span></label>
+      <input type="time" id="fTimeWeekly">
+    </div>
+  </div>
+
+  <!-- MONTHLY -->
+  <div id="fieldMonthly" class="extra-fields">
+    <div class="form-row">
+      <div class="field">
+        <label for="fMonthDay">Day of month <span aria-hidden="true">*</span></label>
+        <select id="fMonthDay"><option value="">Select day…</option></select>
+      </div>
+      <div class="field">
+        <label for="fTimeMonthly">Reminder Time <span aria-hidden="true">*</span></label>
+        <input type="time" id="fTimeMonthly">
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="fNotes">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(optional)</span></label>
+    <textarea id="fNotes" placeholder="e.g. Take with water, avoid grapefruit juice" rows="2"></textarea>
+  </div>
+
+  <div class="field">
+    <label>Color label</label>
+    <div class="color-picker" id="colorPicker" role="radiogroup" aria-label="Select medication color">
+      <div class="color-dot selected" style="background:#4fd1c7" data-color="#4fd1c7" onclick="pickColor(this)" role="radio" aria-label="Teal" tabindex="0"></div>
+      <div class="color-dot" style="background:#f6ad55" data-color="#f6ad55" onclick="pickColor(this)" role="radio" aria-label="Amber" tabindex="0"></div>
+      <div class="color-dot" style="background:#fc8181" data-color="#fc8181" onclick="pickColor(this)" role="radio" aria-label="Coral" tabindex="0"></div>
+      <div class="color-dot" style="background:#63b3ed" data-color="#63b3ed" onclick="pickColor(this)" role="radio" aria-label="Blue" tabindex="0"></div>
+      <div class="color-dot" style="background:#b794f4" data-color="#b794f4" onclick="pickColor(this)" role="radio" aria-label="Purple" tabindex="0"></div>
+      <div class="color-dot" style="background:#68d391" data-color="#68d391" onclick="pickColor(this)" role="radio" aria-label="Green" tabindex="0"></div>
+      <div class="color-dot" style="background:#f687b3" data-color="#f687b3" onclick="pickColor(this)" role="radio" aria-label="Pink" tabindex="0"></div>
+    </div>
+  </div>
+
+  <div id="archiveRow" class="field" style="display:none">
+    <label>Status</label>
+    <div class="chips" role="group" aria-label="Medication status">
+      <button type="button" class="chip active" id="archiveActiveChip"   onclick="setArchived(false)">✅ Active</button>
+      <button type="button" class="chip"        id="archiveArchivedChip" onclick="setArchived(true)">📦 Archive</button>
+    </div>
+  </div>
+
+  <div style="height:14px"></div>
+
+  <div style="display:flex;gap:10px;margin-bottom:6px">
+    <button class="btn btn-ghost" style="width:90px;flex-shrink:0;" onclick="closeSheet()">Cancel</button>
+    <button class="btn btn-primary btn-full" id="saveBtn" onclick="savePill()">Add Medication</button>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-icon" id="modalIcon" aria-hidden="true">⚠️</div>
+    <div class="modal-title" id="modalTitle">Are you sure?</div>
+    <div class="modal-body"  id="modalBody">This action cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="modalConfirm" onclick="confirmModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO TOAST -->
+<div class="undo-toast" id="undoToast" role="alert" aria-live="assertive">
+  <span class="undo-toast-msg" id="undoMsg">Medication removed</span>
+  <button class="undo-btn" onclick="doUndo()" aria-label="Undo delete">UNDO</button>
+</div>
+
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+'use strict';
+
+const APP_VERSION  = 'v9.0';
+const COLORS       = ['#4fd1c7','#f6ad55','#fc8181','#63b3ed','#b794f4','#68d391','#f687b3'];
+const DAY_NAMES    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const CAT_ICONS    = { general:'💊', heart:'❤️', diabetes:'🩸', pain:'🩹', vitamin:'🌿', mental:'🧠', antibiotic:'🦠', other:'📦' };
+const FOOD_LABELS  = { any:'', before:'Before food', after:'After food', empty:'Empty stomach' };
+const PRIORITY_ORDER = { critical:0, high:1, normal:2, low:3 };
+const CHAIN_HOURS  = 1;
+
+const Storage = {
+  get(key, fallback = null) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null) return fallback;
+      return JSON.parse(raw);
+    } catch(e) {
+      console.warn('[PillCare] Storage.get corrupted:', key, e);
+      return fallback;
+    }
+  },
+  set(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+      return true;
+    } catch(e) {
+      console.error('[PillCare] Storage.set failed:', key, e);
+      showToast('⚠️ Storage almost full — please export a backup');
+      return false;
+    }
+  },
+  remove(key) {
+    try { localStorage.removeItem(key); } catch(e) {}
+  },
+  size() {
+    try {
+      let t = 0;
+      for (const k of Object.keys(localStorage)) t += (localStorage[k].length + k.length) * 2;
+      return t < 1024 ? t + ' B' : (t / 1024).toFixed(1) + ' KB';
+    } catch(e) { return '–'; }
+  }
+};
+
+let pills        = [];
+let takenToday   = {};
+let chains       = {};
+let history      = [];
+let appSettings  = { elderly: false, reducedMotion: false };
+
+let selectedColor    = COLORS[0];
+let selectedFood     = 'any';
+let selectedWeekDays = [];
+let editingPillId    = null;
+let isArchivedEdit   = false;
+
+let swReg           = null;
+let deferredInstall = null;
+let notifiedKeys    = {};
+let firedSnoozeIds  = new Set();
+let undoPill        = null;
+let undoTimer       = null;
+let lastNotifTime   = null;
+let historyFilter   = 'all';
+let modalCallback   = null;
+let lastMinChecked  = '';
+
+const pad      = n   => String(n).padStart(2,'0');
+const hmStr    = (h,m) => pad(h)+':'+pad(m);
+const todayKey = () => { const d = new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const nowHM    = () => { const n = new Date(); return hmStr(n.getHours(), n.getMinutes()); };
+const esc      = s   => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const hmToMins = hm  => { const [h,m] = hm.split(':').map(Number); return h*60+m; };
+const minsToHm = m   => hmStr(Math.floor(m/60)%24, Math.round(m)%60);
+const ordinal  = n   => n+(n===1?'st':n===2?'nd':n===3?'rd':'th');
+const clamp    = (v,lo,hi) => Math.min(hi, Math.max(lo, v));
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5)  return 'Good night';
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  if (h < 21) return 'Good evening';
+  return 'Good night';
+}
+
+function getTodayDoses(pill) {
+  if (pill.freq === 'once') return [pill.time];
+
+  if (pill.freq === 'custom') {
+    const count        = clamp(parseInt(pill.count) || 1, 1, 12);
+    const intervalMins = Math.round((24 * 60) / count);
+    const startMins    = hmToMins(pill.time || '08:00');
+    const doses = [];
+    for (let i = 0; i < count; i++) {
+      const mins = (startMins + i * intervalMins) % (24 * 60);
+      doses.push(minsToHm(mins));
+    }
+    return doses;
+  }
+
+  if (pill.freq === 'weekly') {
+    const today = new Date().getDay();
+    const days  = (pill.weekDays || []).map(Number);
+    return days.includes(today) ? [pill.time] : [];
+  }
+
+  if (pill.freq === 'monthly') {
+    return pill.monthDay === new Date().getDate() ? [pill.time] : [];
+  }
+
+  return [pill.time || '08:00'];
+}
+
+function isTodayScheduled(pill) {
+  if (pill.archived) return false;
+  if (pill.freq === 'weekly')  return !!(pill.weekDays && pill.weekDays.map(Number).includes(new Date().getDay()));
+  if (pill.freq === 'monthly') return pill.monthDay === new Date().getDate();
+  return true;
+}
+
+function freqLabel(pill) {
+  if (pill.freq === 'once') return 'Once daily';
+  if (pill.freq === 'custom') {
+    const count = parseInt(pill.count) || 1;
+    const mins  = Math.round((24 * 60) / count);
+    const h = Math.floor(mins / 60), m = mins % 60;
+    const iv = h > 0 ? (m > 0 ? `${h}h ${m}min` : `${h}h`) : `${m}min`;
+    return `${count}× daily · ${iv} apart`;
+  }
+  if (pill.freq === 'weekly') {
+    const days = (pill.weekDays || []).sort((a,b)=>a-b).map(d => DAY_NAMES[d]).join(', ');
+    return 'Weekly · ' + days;
+  }
+  if (pill.freq === 'monthly') return 'Monthly · ' + ordinal(pill.monthDay);
+  return '';
+}
+
+function loadState() {
+  pills       = Storage.get('pc_pills', []);
+  history     = Storage.get('pc_history', []);
+  appSettings = Storage.get('pc_settings', { elderly: false, reducedMotion: false });
+
+  const storedDate = Storage.get('pc_taken_date', null);
+  const today      = todayKey();
+
+  if (storedDate !== today) {
+    if (storedDate) recordMissedFromDate(storedDate);
+    takenToday   = {};
+    chains       = {};
+    notifiedKeys = {};
+    Storage.set('pc_taken_date', today);
+    Storage.set('pc_taken', {});
+    Storage.set('pc_chains', {});
+  } else {
+    takenToday = Storage.get('pc_taken', {});
+    chains     = Storage.get('pc_chains', {});
+    pruneStaleChains();
+  }
+}
+
+function recordMissedFromDate(date) {
+  const taken   = Storage.get('pc_taken', {});
+  const dateObj = new Date(date + 'T00:00:00');
+
+  pills.forEach(pill => {
+    if (pill.archived) return;
+    const doses = getTodayDosesForDate(pill, dateObj);
+    doses.forEach((doseTime, idx) => {
+      const k = pill.id + '_dose' + idx;
+      if (!taken[k]) {
+        logHistory({
+          pillId: pill.id, pillName: pill.name, color: pill.color,
+          date, doseTime, takenAt: null, missed: true
+        });
+      }
+    });
+  });
+}
+
+function getTodayDosesForDate(pill, dateObj) {
+  const dow = dateObj.getDay();
+  if (pill.freq === 'once') return [pill.time];
+  if (pill.freq === 'custom') {
+    const count = clamp(parseInt(pill.count) || 1, 1, 12);
+    const intervalMins = Math.round((24 * 60) / count);
+    const startMins = hmToMins(pill.time || '08:00');
+    const doses = [];
+    for (let i = 0; i < count; i++) {
+      doses.push(minsToHm((startMins + i * intervalMins) % (24 * 60)));
+    }
+    return doses;
+  }
+  if (pill.freq === 'weekly') {
+    const days = (pill.weekDays || []).map(Number);
+    return days.includes(dow) ? [pill.time] : [];
+  }
+  if (pill.freq === 'monthly') {
+    return pill.monthDay === dateObj.getDate() ? [pill.time] : [];
+  }
+  return [pill.time || '08:00'];
+}
+
+function saveTaken()   { Storage.set('pc_taken',   takenToday); }
+function saveChains()  { Storage.set('pc_chains',  chains); }
+function savePills()   { Storage.set('pc_pills',   pills); syncSnapshotToSW(); }
+function saveHistory() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  history = history.filter(h => new Date(h.date) >= cutoff);
+  Storage.set('pc_history', history);
+}
+function saveSettings() { Storage.set('pc_settings', appSettings); }
+
+function logHistory(entry) {
+  const dup = history.find(h => h.pillId === entry.pillId && h.date === entry.date && h.doseTime === entry.doseTime);
+  if (dup) { Object.assign(dup, entry); }
+  else { history.unshift(entry); }
+  saveHistory();
+}
+
+function pruneStaleChains() {
+  const now   = Date.now();
+  const today = todayKey();
+  let changed = false;
+
+  Object.keys(chains).forEach(k => {
+    const c = chains[k];
+    if (takenToday[c.pillId + '_dose' + c.doseIdx])            { delete chains[k]; changed = true; return; }
+    if (c.scheduledDay !== today)                              { delete chains[k]; changed = true; return; }
+    if (c.startedAt && (now - c.startedAt) > 12 * 60 * 60 * 1000) { delete chains[k]; changed = true; return; }
+  });
+
+  if (changed) saveChains();
+}
+
+function startChain(pill, doseIdx, doseTime, label) {
+  const key = pill.id + '_dose' + doseIdx;
+  if (chains[key]) return;
+  chains[key] = {
+    nextFireAt:   Date.now() + CHAIN_HOURS * 60 * 60 * 1000,
+    pillName:     label,
+    dose:         pill.dose,
+    color:        pill.color,
+    doseTime,
+    pillId:       pill.id,
+    doseIdx,
+    scheduledDay: todayKey(),
+    startedAt:    Date.now(),
+    chainCount:   0,
+  };
+  saveChains();
+}
+
+function stopChain(pillId, doseIdx) {
+  const key = pillId + '_dose' + doseIdx;
+  if (chains[key]) { delete chains[key]; saveChains(); }
+}
+
+function stopAllChainsForPill(pillId) {
+  Object.keys(chains).forEach(k => { if (chains[k].pillId === pillId) delete chains[k]; });
+  saveChains();
+}
+
+async function initSW() {
+  if (!('serviceWorker' in navigator)) {
+    setSwStatus('err', '❌ Not supported in this browser');
+    return;
+  }
+
+  try {
+    swReg = await navigator.serviceWorker.register('sw.js', { scope: './' });
+    await navigator.serviceWorker.ready;
+    setSwStatus('ok', '✅ Active — reminders enabled');
+
+    if ('periodicSync' in swReg) {
+      try {
+        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+        if (status.state === 'granted') {
+          await swReg.periodicSync.register('check-reminders', { minInterval: 60 * 60 * 1000 });
+        }
+      } catch(e) { /* not supported */ }
+    }
+
+    swReg.addEventListener('updatefound', () => {
+      const newWorker = swReg.installing;
+      newWorker?.addEventListener('statechange', () => {
+        // FIX: was newWorker.statechange (bug), should be newWorker.state
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          document.getElementById('updateBanner').classList.remove('hidden');
+        }
+      });
+    });
+
+    syncSnapshotToSW();
+
+  } catch(e) {
+    console.error('[PillCare] SW registration failed:', e);
+    setSwStatus('err', '⚠️ Reminders may not work offline');
+  }
+}
+
+function setSwStatus(cls, msg) {
+  const el = document.getElementById('swStatus');
+  el.className = 'sw-status ' + cls;
+  el.innerHTML = `<span class="sw-dot" aria-hidden="true"></span> ${msg}`;
+}
+
+function reloadForUpdate() {
+  if (swReg?.waiting) swReg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  setTimeout(() => location.reload(), 300);
+}
+
+function syncSnapshotToSW() {
+  if (!swReg?.active) return;
+  try {
+    swReg.active.postMessage({
+      type: 'UPDATE_SNAPSHOT',
+      snapshot: { pills, taken: takenToday, lastNotif: {} }
+    });
+  } catch(e) {}
+}
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    showToast('❌ Notifications not supported in this browser');
+    return;
+  }
+  const p = await Notification.requestPermission();
+  if (p === 'granted') {
+    Storage.remove('pc_notif_dismissed');
+    document.getElementById('notifBanner').classList.add('hidden');
+    showToast('🔔 Notifications enabled!');
+    sendTestNotif();
+  } else if (p === 'denied') {
+    showToast('🚫 Notifications blocked — please allow in browser settings');
+  }
+  updateDiagnostics();
+}
+
+function updateBannerVisibility() {
+  const granted   = 'Notification' in window && Notification.permission === 'granted';
+  const dismissed = Storage.get('pc_notif_dismissed', false);
+  document.getElementById('notifBanner').classList.toggle('hidden', granted || dismissed);
+}
+
+function dismissNotifBanner() {
+  Storage.set('pc_notif_dismissed', true);
+  document.getElementById('notifBanner').classList.add('hidden');
+}
+
+async function fireNotification(name, dose, time, type, pillData = {}) {
+  if (Notification.permission !== 'granted') return false;
+
+  const tag = `pc-${pillData.id || name}-${(time || '').replace(':','')}-${todayKey()}`;
+
+  const titles = {
+    scheduled: `💊 ${name}`,
+    chain:     `🔔 ${name}`,
+    snooze:    `⏰ ${name}`,
+  };
+  const bodies = {
+    scheduled: [(dose || ''), `Scheduled: ${time}`, pillData.food && pillData.food !== 'any' ? FOOD_LABELS[pillData.food] : ''].filter(Boolean).join(' · '),
+    chain:     [(dose || ''), 'Still not taken — please take now'].filter(Boolean).join(' · '),
+    snooze:    [(dose || ''), 'Snooze over — take your dose now!'].filter(Boolean).join(' · '),
+  };
+
+  const opts = {
+    body:               bodies[type] || bodies.scheduled,
+    icon:               'icons/icon-192.png',
+    badge:              'icons/icon-72.png',
+    vibrate:            type === 'chain' ? [300,100,300,100,500] : [200,50,200],
+    requireInteraction: pillData.priority === 'critical' || pillData.priority === 'high',
+    tag,
+    actions: [
+      { action: 'taken',  title: '✅ Mark Taken' },
+      { action: 'snooze', title: '⏰ Snooze 5 min' },
+    ],
+    data: {
+      pillId:   pillData.id,
+      doseTime: time,
+      date:     todayKey(),
+      name, dose,
+      priority: pillData.priority,
+    }
+  };
+
+  if (pillData.priority === 'critical') {
+    opts.vibrate            = [300, 100, 300, 100, 300];
+    opts.requireInteraction = true;
+  }
+
+  try {
+    if (swReg?.active && Notification.permission === 'granted') {
+      await swReg.showNotification(titles[type] || titles.scheduled, opts);
+      lastNotifTime = new Date();
+      return true;
+    }
+  } catch(e) { /* fall through */ }
+
+  try {
+    new Notification(titles[type] || titles.scheduled, {
+      body:               opts.body,
+      requireInteraction: opts.requireInteraction,
+      tag,
+    });
+    lastNotifTime = new Date();
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+async function sendTestNotif() {
+  if (Notification.permission !== 'granted') { await requestNotifPermission(); return; }
+  const ok = await fireNotification('Test Medication', '100mg', nowHM(), 'scheduled', { priority: 'normal' });
+  showToast(ok ? '🔔 Test notification sent!' : '❌ Could not send notification');
+  updateDiagnostics();
+}
+
+function checkReminders() {
+  const now   = new Date();
+  const hm    = hmStr(now.getHours(), now.getMinutes());
+  const ms    = now.getTime();
+  const today = todayKey();
+
+  if (Storage.get('pc_taken_date') !== today) { loadState(); renderAll(); return; }
+
+  pruneStaleChains();
+
+  if (hm !== lastMinChecked) {
+    lastMinChecked = hm;
+
+    pills.forEach(pill => {
+      if (!isTodayScheduled(pill)) return;
+      const doses = getTodayDoses(pill);
+
+      doses.forEach((doseTime, idx) => {
+        if (doseTime !== hm) return;
+        const takenKey = pill.id + '_dose' + idx;
+        if (takenToday[takenKey]) return;
+        const nk = pill.id + '_n_' + hm + '_' + idx;
+        if (notifiedKeys[nk]) return;
+
+        notifiedKeys[nk] = true;
+        const label = doses.length > 1 ? `${pill.name} (${idx+1}/${doses.length})` : pill.name;
+        fireNotification(label, pill.dose, doseTime, 'scheduled', pill);
+        startChain(pill, idx, doseTime, label);
+      });
+    });
+  }
+
+  Object.keys(chains).forEach(k => {
+    const c = chains[k];
+    const takenKey = c.pillId + '_dose' + c.doseIdx;
+    if (takenToday[takenKey]) { delete chains[k]; saveChains(); return; }
+    if (c.scheduledDay !== today) { delete chains[k]; saveChains(); return; }
+
+    if (ms >= c.nextFireAt) {
+      c.chainCount = (c.chainCount || 0) + 1;
+      fireNotification(c.pillName, c.dose, c.doseTime, 'chain', { id: c.pillId, priority: c.priority });
+      c.nextFireAt = ms + CHAIN_HOURS * 60 * 60 * 1000;
+      saveChains();
+    }
+  });
+
+  const snoozed   = Storage.get('pc_snoozed', []);
+  const remaining = [];
+
+  snoozed.forEach(s => {
+    if (ms >= s.fireAt) {
+      if (!firedSnoozeIds.has(s.id)) {
+        firedSnoozeIds.add(s.id);
+        const pill = pills.find(p => p.id === s.pillId);
+        fireNotification(s.name, s.dose, s.time, 'snooze', pill || {});
+        const base = s.pillId;
+        Object.keys(chains).forEach(k => {
+          if (chains[k].pillId === base) chains[k].nextFireAt = s.fireAt + CHAIN_HOURS * 60 * 60 * 1000;
+        });
+        saveChains();
+      }
+    } else {
+      remaining.push(s);
+    }
+  });
+
+  if (remaining.length !== snoozed.length) Storage.set('pc_snoozed', remaining);
+
+  if (swReg?.active) {
+    try { swReg.active.postMessage({ type: 'PING' }); } catch(e) {}
+  }
+}
+
+setInterval(checkReminders, 10000);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', event => {
+    const msg = event.data;
+    if (!msg?.type) return;
+
+    switch (msg.type) {
+      case 'STORE_SNOOZE': {
+        const snoozed = Storage.get('pc_snoozed', []);
+        const entry = {
+          id:     msg.pillId + '-' + msg.fireAt,
+          pillId: msg.pillId,
+          name:   msg.name,
+          dose:   msg.dose,
+          time:   msg.time,
+          fireAt: msg.fireAt,
+        };
+        if (!snoozed.find(s => s.id === entry.id)) {
+          snoozed.push(entry);
+          Storage.set('pc_snoozed', snoozed);
+        }
+        showToast('⏰ Snoozed for 5 minutes');
+        break;
+      }
+
+      case 'MARK_TAKEN': {
+        const pill = pills.find(p => p.id === msg.pillId);
+        if (pill) {
+          const doses = getTodayDoses(pill);
+          let idx = doses.indexOf(msg.doseTime);
+          if (idx < 0) idx = 0;
+          const key = pill.id + '_dose' + idx;
+          if (!takenToday[key]) {
+            takenToday[key] = new Date().toISOString();
+            saveTaken();
+            stopChain(pill.id, idx);
+            clearLocalSnooze(pill.id);
+            logHistory({ pillId: pill.id, pillName: pill.name, color: pill.color, date: todayKey(), doseTime: msg.doseTime || doses[idx], takenAt: new Date().toISOString(), missed: false });
+            renderAll();
+            showToast('✅ ' + pill.name + ' marked as taken');
+          }
+        }
+        break;
+      }
+
+      case 'NOTIFICATION_DISMISSED': {
+        console.log('[PillCare] Notification dismissed:', msg);
+        break;
+      }
+
+      case 'FOCUS_PILL': {
+        showPage('today', document.getElementById('nav-today'));
+        break;
+      }
+
+      case 'NEW_VERSION_READY': {
+        document.getElementById('updateBanner').classList.remove('hidden');
+        break;
+      }
+
+      case 'PONG': {
+        break;
+      }
+
+      case 'SW_ERROR': {
+        console.warn('[PillCare] SW error:', msg.message);
+        break;
+      }
+    }
+  });
+}
+
+function clearLocalSnooze(pillId) {
+  const snoozed  = Storage.get('pc_snoozed', []);
+  const filtered = snoozed.filter(s => s.pillId !== pillId);
+  Storage.set('pc_snoozed', filtered);
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent     = hmStr(now.getHours(), now.getMinutes());
+  document.getElementById('greeting').textContent  = greeting();
+  document.getElementById('todayDate').textContent = now.toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.remove('active');
+    b.removeAttribute('aria-current');
+  });
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  btn.setAttribute('aria-current', 'page');
+
+  if (id === 'history')  renderHistory();
+  if (id === 'meds')     renderMeds();
+  if (id === 'settings') updateDiagnostics();
+  if (id === 'today')    renderToday();
+}
+
+function onFreqChange() {
+  const freq = document.getElementById('fFreq').value;
+  ['fieldOnce','fieldCustom','fieldWeekly','fieldMonthly'].forEach(id =>
+    document.getElementById(id).classList.remove('show')
+  );
+  const map = { once:'fieldOnce', custom:'fieldCustom', weekly:'fieldWeekly', monthly:'fieldMonthly' };
+  document.getElementById(map[freq])?.classList.add('show');
+}
+
+function setPreset(inputId, val) {
+  document.getElementById(inputId).value = val;
+}
+
+function setCustomPreset(count, startTime) {
+  document.getElementById('fCount').value      = count;
+  document.getElementById('fTimeCustom').value = startTime;
+  onCustomInput();
+}
+
+function onCustomInput() {
+  const count = parseInt(document.getElementById('fCount').value);
+  const time  = document.getElementById('fTimeCustom').value;
+  const hint  = document.getElementById('intervalHint');
+  const prev  = document.getElementById('dosePreview');
+
+  if (!count || count < 2) {
+    hint.textContent = '';
+    prev.innerHTML   = '⏱ Set count and time above to preview your doses';
+    return;
+  }
+  if (count > 12) {
+    hint.className   = 'hint bad';
+    hint.textContent = 'Maximum 12 doses per day';
+    return;
+  }
+
+  const mins = Math.round((24 * 60) / count);
+  const h = Math.floor(mins / 60), m = mins % 60;
+  const iv = h > 0 ? (m > 0 ? `${h}h ${m}min` : `${h}h`) : `${m}min`;
+
+  hint.className   = 'hint good';
+  hint.textContent = `→ ${iv} between each dose`;
+
+  if (!time) {
+    prev.innerHTML = `📅 <strong>${count} doses</strong> · ${iv} apart — set 1st dose time to preview`;
+    return;
+  }
+
+  const doses = getTodayDoses({ freq: 'custom', time, count });
+  prev.innerHTML = `📅 <strong>${doses.length} dose${doses.length > 1 ? 's' : ''} today</strong> → <span class="times">${doses.join(' → ')}</span>`;
+}
+
+function toggleDay(el) {
+  const day      = parseInt(el.dataset.day);
+  const isActive = el.classList.toggle('active');
+  el.setAttribute('aria-pressed', isActive);
+  selectedWeekDays = selectedWeekDays.filter(d => d !== day);
+  if (isActive) selectedWeekDays.push(day);
+}
+
+function pickColor(el) {
+  document.querySelectorAll('.color-dot').forEach(d => {
+    d.classList.remove('selected');
+    d.setAttribute('aria-checked', 'false');
+  });
+  el.classList.add('selected');
+  el.setAttribute('aria-checked', 'true');
+  selectedColor = el.dataset.color;
+}
+
+function pickFood(el) {
+  document.querySelectorAll('#foodChips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedFood = el.dataset.food;
+}
+
+function setArchived(val) {
+  isArchivedEdit = val;
+  document.getElementById('archiveActiveChip').classList.toggle('active', !val);
+  document.getElementById('archiveArchivedChip').classList.toggle('active', val);
+}
+
+(function() {
+  const sel = document.getElementById('fMonthDay');
+  for (let d = 1; d <= 31; d++) {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = ordinal(d);
+    sel.appendChild(o);
+  }
+})();
+
+function openSheet(pillId) {
+  editingPillId = pillId || null;
+  resetForm();
+
+  if (pillId) {
+    const p = pills.find(x => x.id === pillId);
+    if (!p) return;
+    document.getElementById('sheetTitle').textContent = 'Edit Medication';
+    document.getElementById('saveBtn').textContent    = 'Save Changes';
+    document.getElementById('archiveRow').style.display = 'block';
+    populateForm(p);
+  } else {
+    document.getElementById('sheetTitle').textContent = 'Add Medication';
+    document.getElementById('saveBtn').textContent    = 'Add Medication';
+    document.getElementById('archiveRow').style.display = 'none';
+  }
+
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+  document.getElementById('sheet').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('fName').focus(), 380);
+}
+
+function closeSheet() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+  document.body.style.overflow = '';
+  editingPillId = null;
+}
+
+function resetForm() {
+  ['fName','fDose','fNotes','fTimeOnce','fTimeCustom','fTimeWeekly','fTimeMonthly','fCount'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.classList.remove('error'); }
+  });
+  document.getElementById('fFreq').value     = 'once';
+  document.getElementById('fCategory').value = 'general';
+  document.getElementById('fPriority').value = 'normal';
+  document.getElementById('fMonthDay').value = '';
+  document.getElementById('intervalHint').textContent = '';
+  document.getElementById('dosePreview').innerHTML = '⏱ Set count and time above to preview your doses';
+
+  document.querySelectorAll('.day-chip').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  selectedWeekDays = [];
+  selectedFood     = 'any';
+  isArchivedEdit   = false;
+
+  document.querySelectorAll('#foodChips .chip').forEach(c => c.classList.remove('active'));
+  document.querySelector('#foodChips .chip[data-food="any"]').classList.add('active');
+
+  selectedColor = COLORS[0];
+  document.querySelectorAll('.color-dot').forEach((d, i) => {
+    d.classList.toggle('selected', i === 0);
+    d.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+  });
+
+  onFreqChange();
+}
+
+function populateForm(p) {
+  document.getElementById('fName').value     = p.name;
+  document.getElementById('fDose').value     = p.dose || '';
+  document.getElementById('fNotes').value    = p.notes || '';
+  document.getElementById('fFreq').value     = p.freq;
+  document.getElementById('fCategory').value = p.category || 'general';
+  document.getElementById('fPriority').value = p.priority || 'normal';
+  isArchivedEdit = !!p.archived;
+  setArchived(isArchivedEdit);
+
+  if (p.freq === 'once')    { document.getElementById('fTimeOnce').value = p.time || ''; }
+  if (p.freq === 'custom')  { document.getElementById('fTimeCustom').value = p.time || ''; document.getElementById('fCount').value = p.count || ''; onCustomInput(); }
+  if (p.freq === 'weekly')  {
+    document.getElementById('fTimeWeekly').value = p.time || '';
+    (p.weekDays || []).forEach(d => {
+      selectedWeekDays.push(Number(d));
+      const chip = document.querySelector(`.day-chip[data-day="${d}"]`);
+      if (chip) { chip.classList.add('active'); chip.setAttribute('aria-pressed','true'); }
+    });
+  }
+  if (p.freq === 'monthly') { document.getElementById('fTimeMonthly').value = p.time || ''; document.getElementById('fMonthDay').value = p.monthDay || ''; }
+
+  selectedFood = p.food || 'any';
+  document.querySelectorAll('#foodChips .chip').forEach(c => c.classList.toggle('active', c.dataset.food === selectedFood));
+
+  selectedColor = p.color || COLORS[0];
+  document.querySelectorAll('.color-dot').forEach(d => {
+    const sel = d.dataset.color === selectedColor;
+    d.classList.toggle('selected', sel);
+    d.setAttribute('aria-checked', sel ? 'true' : 'false');
+  });
+
+  onFreqChange();
+}
+
+function savePill() {
+  const name     = document.getElementById('fName').value.trim();
+  const dose     = document.getElementById('fDose').value.trim();
+  const freq     = document.getElementById('fFreq').value;
+  const notes    = document.getElementById('fNotes').value.trim();
+  const category = document.getElementById('fCategory').value;
+  const priority = document.getElementById('fPriority').value;
+
+  const nameEl = document.getElementById('fName');
+  if (!name) {
+    nameEl.classList.add('error'); nameEl.focus();
+    showToast('⚠️ Please enter a medication name');
+    return;
+  }
+  nameEl.classList.remove('error');
+
+  const pill = {
+    id:        editingPillId || String(Date.now()),
+    name, dose, freq, notes, category, priority,
+    food:      selectedFood,
+    color:     selectedColor,
+    archived:  isArchivedEdit,
+    createdAt: editingPillId
+      ? (pills.find(p => p.id === editingPillId)?.createdAt || new Date().toISOString())
+      : new Date().toISOString()
+  };
+
+  if (freq === 'once') {
+    const time = document.getElementById('fTimeOnce').value;
+    if (!time) { showToast('⚠️ Please set a reminder time'); document.getElementById('fTimeOnce').focus(); return; }
+    pill.time = time;
+  } else if (freq === 'custom') {
+    const count = parseInt(document.getElementById('fCount').value);
+    const time  = document.getElementById('fTimeCustom').value;
+    if (!count || count < 2) { showToast('⚠️ Enter at least 2 doses per day'); return; }
+    if (count > 12) { showToast('⚠️ Maximum 12 doses per day'); return; }
+    if (!time) { showToast('⚠️ Set the 1st dose time'); return; }
+    pill.time = time; pill.count = count;
+  } else if (freq === 'weekly') {
+    const time = document.getElementById('fTimeWeekly').value;
+    if (!selectedWeekDays.length) { showToast('⚠️ Select at least one day'); return; }
+    if (!time) { showToast('⚠️ Set a reminder time'); return; }
+    pill.time = time; pill.weekDays = [...selectedWeekDays].sort((a,b) => a-b);
+  } else if (freq === 'monthly') {
+    const monthDay = parseInt(document.getElementById('fMonthDay').value);
+    const time     = document.getElementById('fTimeMonthly').value;
+    if (!monthDay) { showToast('⚠️ Select a day of the month'); return; }
+    if (!time) { showToast('⚠️ Set a reminder time'); return; }
+    pill.time = time; pill.monthDay = monthDay;
+  }
+
+  if (editingPillId) {
+    const idx = pills.findIndex(p => p.id === editingPillId);
+    if (idx >= 0) pills[idx] = pill;
+    showToast('✅ ' + name + ' updated');
+  } else {
+    pills.push(pill);
+    const count = isTodayScheduled(pill) ? getTodayDoses(pill).length : 0;
+    showToast('✅ ' + name + ' added' + (count ? ` — ${count} dose${count > 1 ? 's' : ''} today` : ''));
+  }
+
+  savePills(); closeSheet(); renderAll();
+}
+
+function markDoseTaken(pillId, doseIdx) {
+  const pill = pills.find(p => p.id === pillId);
+  if (!pill) return;
+
+  const key      = pillId + '_dose' + doseIdx;
+  const doses    = getTodayDoses(pill);
+  const doseTime = doses[doseIdx] || pill.time;
+
+  if (takenToday[key]) {
+    delete takenToday[key];
+    saveTaken();
+    history = history.filter(h => !(h.pillId === pillId && h.date === todayKey() && h.doseTime === doseTime));
+    saveHistory();
+    showToast('↩️ Marked as not taken');
+  } else {
+    takenToday[key] = new Date().toISOString();
+    saveTaken();
+    stopChain(pillId, doseIdx);
+    clearLocalSnooze(pillId);
+    logHistory({ pillId, pillName: pill.name, color: pill.color, dose: pill.dose, date: todayKey(), doseTime, takenAt: new Date().toISOString(), missed: false });
+    showToast('✅ ' + pill.name + ' — dose recorded!');
+
+    const btn = document.querySelector(`.take-btn[data-pill="${pillId}"][data-idx="${doseIdx}"]`);
+    if (btn) { btn.style.animation = 'takePop 0.3s ease'; setTimeout(() => btn.style.animation = '', 350); }
+  }
+
+  renderAll();
+}
+
+function snoozeDose(pillId, doseIdx) {
+  const pill = pills.find(p => p.id === pillId);
+  if (!pill) return;
+
+  const doses    = getTodayDoses(pill);
+  const doseTime = doses[doseIdx] || pill.time;
+  const fireAt   = Date.now() + 5 * 60 * 1000;
+
+  const snoozed = Storage.get('pc_snoozed', []);
+  const entry   = { id: pillId + '-' + doseIdx + '-' + fireAt, pillId, name: pill.name, dose: pill.dose, time: doseTime, fireAt };
+
+  if (!snoozed.find(s => s.pillId === pillId && s.time === doseTime)) {
+    snoozed.push(entry);
+    Storage.set('pc_snoozed', snoozed);
+    showToast('⏰ ' + pill.name + ' snoozed for 5 minutes');
+
+    const chainKey = pill.id + '_dose' + doseIdx;
+    if (chains[chainKey]) { chains[chainKey].nextFireAt = fireAt + CHAIN_HOURS * 60 * 60 * 1000; saveChains(); }
+  }
+}
+
+function deletePill(id) {
+  const pill = pills.find(p => p.id === id);
+  if (!pill) return;
+
+  openModal({
+    icon:         '🗑️',
+    title:        'Remove ' + pill.name + '?',
+    body:         'This medication and all its reminders will be removed. You can undo this immediately after.',
+    confirmText:  'Remove',
+    confirmClass: 'btn-danger',
+    onConfirm: () => {
+      undoPill = { pill, index: pills.findIndex(p => p.id === id) };
+      pills = pills.filter(p => p.id !== id);
+      stopAllChainsForPill(id);
+      savePills(); renderAll();
+      showUndoToast(pill.name + ' removed');
+    }
+  });
+}
+
+function duplicatePill(id) {
+  const orig = pills.find(p => p.id === id);
+  if (!orig) return;
+  const copy = { ...orig, id: String(Date.now()), name: orig.name + ' (copy)', createdAt: new Date().toISOString() };
+  pills.push(copy); savePills(); renderAll();
+  showToast('📋 ' + orig.name + ' duplicated');
+}
+
+function openModal({ icon, title, body, confirmText, confirmClass, onConfirm }) {
+  document.getElementById('modalIcon').textContent  = icon || '⚠️';
+  document.getElementById('modalTitle').textContent = title || 'Are you sure?';
+  document.getElementById('modalBody').textContent  = body || '';
+  const btn = document.getElementById('modalConfirm');
+  btn.textContent = confirmText || 'Confirm';
+  btn.className   = 'btn ' + (confirmClass || 'btn-primary');
+  modalCallback   = onConfirm;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  modalCallback = null;
+}
+
+function confirmModal() {
+  closeModal();
+  if (modalCallback) modalCallback();
+}
+
+function confirmClearAll() {
+  openModal({
+    icon:         '⚠️',
+    title:        'Clear All Data?',
+    body:         'This will permanently delete ALL medications, history, and settings. This cannot be undone. Please export a backup first.',
+    confirmText:  'Clear Everything',
+    confirmClass: 'btn-danger',
+    onConfirm:    () => { localStorage.clear(); location.reload(); }
+  });
+}
+
+function showUndoToast(msg) {
+  const t = document.getElementById('undoToast');
+  document.getElementById('undoMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { t.classList.remove('show'); undoPill = null; }, 7000);
+}
+
+function doUndo() {
+  if (!undoPill) return;
+  const { pill, index } = undoPill;
+  pills.splice(index, 0, pill);
+  savePills(); renderAll();
+  document.getElementById('undoToast').classList.remove('show');
+  undoPill = null;
+  clearTimeout(undoTimer);
+  showToast('↩️ ' + pill.name + ' restored');
+}
+
+function getTodayAdherence() {
+  let total = 0, taken = 0;
+  pills.forEach(p => {
+    if (!isTodayScheduled(p) || p.archived) return;
+    const doses = getTodayDoses(p);
+    total += doses.length;
+    doses.forEach((_, i) => { if (takenToday[p.id + '_dose' + i]) taken++; });
+  });
+  return total === 0 ? null : Math.round((taken / total) * 100);
+}
+
+function getStreak() {
+  let streak = 0;
+  const today = new Date();
+  for (let i = 1; i <= 90; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr    = d.toISOString().slice(0, 10);
+    const dayHistory = history.filter(h => h.date === dateStr);
+    if (!dayHistory.length) break;
+    if (dayHistory.some(h => h.missed)) break;
+    streak++;
+  }
+  return streak;
+}
+
+function renderToday() {
+  const adherence = getTodayAdherence();
+  const streak    = getStreak();
+
+  let totalDoses = 0, takenCount = 0;
+  pills.forEach(p => {
+    if (!isTodayScheduled(p) || p.archived) return;
+    const doses = getTodayDoses(p);
+    totalDoses += doses.length;
+    doses.forEach((_, i) => { if (takenToday[p.id + '_dose' + i]) takenCount++; });
+  });
+
+  document.getElementById('sTaken').textContent  = takenCount;
+  document.getElementById('sDue').textContent    = totalDoses - takenCount;
+  document.getElementById('sStreak').textContent = streak;
+
+  const adherenceWrap = document.getElementById('adherenceWrap');
+  if (adherence !== null) {
+    document.getElementById('adherencePct').textContent = adherence + '%';
+    const fill = document.getElementById('adherenceFill');
+    fill.style.width = adherence + '%';
+    fill.style.background = adherence >= 80
+      ? 'linear-gradient(90deg,var(--teal),var(--green))'
+      : adherence >= 50
+        ? 'linear-gradient(90deg,var(--amber),var(--teal))'
+        : 'linear-gradient(90deg,var(--red),var(--amber))';
+    document.getElementById('adherenceBar').setAttribute('aria-valuenow', adherence);
+    adherenceWrap.style.display = 'block';
+  } else {
+    adherenceWrap.style.display = 'none';
+  }
+
+  const todayPills  = pills.filter(p => isTodayScheduled(p) && !p.archived);
+  const criticalDue = todayPills.filter(p => p.priority === 'critical').filter(p => {
+    const doses = getTodayDoses(p);
+    return doses.some((_, i) => !takenToday[p.id + '_dose' + i]);
+  });
+
+  const alertEl = document.getElementById('criticalAlert');
+  if (criticalDue.length) {
+    document.getElementById('criticalAlertText').textContent =
+      criticalDue.length === 1
+        ? `${criticalDue[0].name} — critical dose due`
+        : `${criticalDue.length} critical medications due`;
+    alertEl.classList.remove('hidden');
+  } else {
+    alertEl.classList.add('hidden');
+  }
+
+  const sorted = [...todayPills].sort((a, b) => {
+    const pa = PRIORITY_ORDER[a.priority || 'normal'];
+    const pb = PRIORITY_ORDER[b.priority || 'normal'];
+    if (pa !== pb) return pa - pb;
+    const at = getTodayDoses(a)[0] || '99:99';
+    const bt = getTodayDoses(b)[0] || '99:99';
+    return at.localeCompare(bt);
+  });
+
+  const list = document.getElementById('pillList');
+
+  if (!sorted.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">💊</div>
+        <h3>No medications today</h3>
+        <p>Tap the <strong>+</strong> button below to add your first medication reminder.<br>It only takes a minute!</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = sorted.map(pill => renderPillCard(pill)).join('');
+}
+
+function renderPillCard(pill) {
+  const doses         = getTodayDoses(pill);
+  const allTaken      = doses.length > 0 && doses.every((_, i) => takenToday[pill.id + '_dose' + i]);
+  const priorityClass = pill.priority === 'critical' ? 'priority-critical-card'
+                      : pill.priority === 'high'     ? 'priority-high-card' : '';
+  const catIcon       = CAT_ICONS[pill.category || 'general'] || '💊';
+  const foodLabel     = FOOD_LABELS[pill.food || 'any'];
+
+  const doseRowsHtml = doses.map((doseTime, idx) => {
+    const taken     = !!takenToday[pill.id + '_dose' + idx];
+    const chainKey  = pill.id + '_dose' + idx;
+    const chaining  = !taken && chains[chainKey];
+    const badge     = getDoseBadge(doseTime, taken, chainKey);
+    const rowCls    = taken ? 'is-taken' : chaining ? 'is-chain' : badge.rowCls;
+    const isOverdue = !taken && badge.rowCls === 'is-overdue';
+    const isNowOrSoon = !taken && (badge.rowCls === 'is-now' || badge.rowCls === 'is-soon');
+
+    return `
+      <div class="dose-row ${rowCls}" role="listitem" aria-label="${esc(pill.name)} at ${doseTime}: ${taken ? 'taken' : badge.label}">
+        <span class="dose-time-label">${doseTime}</span>
+        ${foodLabel ? `<span class="dose-food-tag">${esc(foodLabel)}</span>` : ''}
+        <div class="dose-row-right">
+          ${chaining
+            ? `<span class="badge badge-chain" aria-label="Repeating reminder every hour">🔁 Repeat</span>`
+            : `<span class="badge ${badge.badgeCls}">${badge.label}</span>`}
+          ${(isOverdue || isNowOrSoon) && !taken
+            ? `<button class="snooze-btn" onclick="snoozeDose('${pill.id}',${idx})" aria-label="Snooze ${esc(pill.name)} for 5 minutes">⏰ 5 min</button>`
+            : ''}
+          <button class="take-btn ${taken ? 'taken' : ''}"
+            data-pill="${pill.id}"
+            data-idx="${idx}"
+            onclick="markDoseTaken('${pill.id}',${idx})"
+            aria-label="${taken ? 'Undo: unmark ' + esc(pill.name) : 'Mark ' + esc(pill.name) + ' as taken'}"
+            aria-pressed="${taken}">
+            ${taken ? '✓' : '○'}
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <article class="pill-card ${priorityClass} ${allTaken ? 'all-taken' : ''}" data-id="${pill.id}">
+      <div class="pill-header">
+        <div class="pill-color-strip" style="background:${esc(pill.color)}" aria-hidden="true"></div>
+        <div class="pill-header-info">
+          <div class="pill-name">
+            ${pill.priority === 'critical' ? '<span style="color:var(--red)" aria-label="Critical">⚠️ </span>' : ''}${esc(pill.name)}
+          </div>
+          <div class="pill-tags">
+            <span class="pill-meta-tag">${catIcon} ${esc(pill.dose || 'No dosage')}</span>
+            <span class="pill-meta-tag">📅 ${esc(freqLabel(pill))}</span>
+          </div>
+        </div>
+        <div class="pill-actions">
+          <button class="btn-icon" onclick="openSheet('${pill.id}')" aria-label="Edit ${esc(pill.name)}">✏️</button>
+        </div>
+      </div>
+      <div class="dose-rows" role="list" aria-label="Doses for ${esc(pill.name)}">${doseRowsHtml}</div>
+      ${pill.notes ? `<div style="margin-top:9px;font-size:var(--fs-xs);color:var(--text3);padding:0 4px;line-height:1.5">📝 ${esc(pill.notes)}</div>` : ''}
+    </article>`;
+}
+
+function getDoseBadge(doseTime, taken, chainKey) {
+  if (taken)            return { label: 'Taken ✓',    badgeCls: 'badge-muted', rowCls: 'is-taken' };
+  if (chains[chainKey]) return { label: 'Not taken',  badgeCls: 'badge-amber', rowCls: 'is-chain' };
+
+  const [h, m] = doseTime.split(':').map(Number);
+  const dose   = new Date(); dose.setHours(h, m, 0, 0);
+  const diff   = (dose - new Date()) / 60000;
+
+  if (diff < -30) return { label: 'Overdue',    badgeCls: 'badge-red',   rowCls: 'is-overdue' };
+  if (diff < 0)   return { label: 'Right now!', badgeCls: 'badge-teal',  rowCls: 'is-now' };
+  if (diff <= 30) return { label: Math.round(diff) + 'm', badgeCls: 'badge-amber', rowCls: 'is-soon' };
+
+  const dh = Math.floor(diff / 60), dm = Math.round(diff % 60);
+  return { label: (dh > 0 ? dh + 'h ' : '') + dm + 'm', badgeCls: 'badge-teal', rowCls: '' };
+}
+
+function renderMeds() {
+  const list    = document.getElementById('medsList');
+  const active  = pills.filter(p => !p.archived);
+  const archived = pills.filter(p => p.archived);
+
+  document.getElementById('medsCount').textContent =
+    active.length + ' active medication' + (active.length !== 1 ? 's' : '');
+
+  if (!active.length && !archived.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">💊</div>
+        <h3>No medications yet</h3>
+        <p>Add your first medication using the <strong>+</strong> button. It takes less than a minute.</p>
+      </div>`;
+    return;
+  }
+
+  const sorted = [...active].sort((a, b) =>
+    (PRIORITY_ORDER[a.priority || 'normal'] - PRIORITY_ORDER[b.priority || 'normal']) ||
+    (a.name || '').localeCompare(b.name || '')
+  );
+
+  let html = sorted.map(pill => {
+    const catIcon   = CAT_ICONS[pill.category || 'general'] || '💊';
+    const priClass  = pill.priority === 'critical' ? 'priority-critical-card'
+                    : pill.priority === 'high'     ? 'priority-high-card' : '';
+    const foodLabel = FOOD_LABELS[pill.food || 'any'];
+
+    return `
+      <article class="pill-card ${priClass}" data-id="${pill.id}">
+        <div class="pill-header">
+          <div class="pill-color-strip" style="background:${esc(pill.color)}" aria-hidden="true"></div>
+          <div class="pill-header-info">
+            <div class="pill-name">
+              ${pill.priority === 'critical' ? '<span style="color:var(--red)" aria-label="Critical">⚠️ </span>' : ''}${esc(pill.name)}
+            </div>
+            <div class="pill-tags">
+              <span class="pill-meta-tag">${catIcon} ${esc(pill.dose || 'No dosage')}</span>
+              <span class="pill-meta-tag">📅 ${esc(freqLabel(pill))}</span>
+              ${foodLabel ? `<span class="pill-meta-tag">🍽 ${esc(foodLabel)}</span>` : ''}
+            </div>
+          </div>
+          <div class="pill-actions">
+            <button class="btn-icon"        onclick="openSheet('${pill.id}')"     aria-label="Edit ${esc(pill.name)}">✏️</button>
+            <button class="btn-icon"        onclick="duplicatePill('${pill.id}')" aria-label="Duplicate ${esc(pill.name)}">📋</button>
+            <button class="btn-icon danger" onclick="deletePill('${pill.id}')"   aria-label="Delete ${esc(pill.name)}">🗑️</button>
+          </div>
+        </div>
+        ${pill.notes ? `<div style="font-size:var(--fs-xs);color:var(--text3);padding:0 4px;line-height:1.5;margin-top:5px">📝 ${esc(pill.notes)}</div>` : ''}
+      </article>`;
+  }).join('');
+
+  if (archived.length) {
+    html += `
+      <button class="archived-section-title" onclick="toggleArchivedSection(this)" aria-expanded="false" style="border:none;background:none;font-family:var(--font-body);cursor:pointer;width:100%;text-align:left;">
+        📦 Archived (${archived.length})
+      </button>
+      <div id="archivedList" style="display:none">
+        ${archived.map(pill => `
+          <article class="pill-card" style="opacity:0.5" data-id="${pill.id}">
+            <div class="pill-header">
+              <div class="pill-color-strip" style="background:${esc(pill.color)}" aria-hidden="true"></div>
+              <div class="pill-header-info">
+                <div class="pill-name">${esc(pill.name)}</div>
+                <div class="pill-tags">
+                  <span class="pill-meta-tag">${esc(pill.dose || '')}</span>
+                  <span class="pill-meta-tag">📅 ${esc(freqLabel(pill))}</span>
+                </div>
+              </div>
+              <div class="pill-actions">
+                <button class="btn-icon"        onclick="openSheet('${pill.id}')"  aria-label="Edit ${esc(pill.name)}">✏️</button>
+                <button class="btn-icon danger" onclick="deletePill('${pill.id}')" aria-label="Delete ${esc(pill.name)}">🗑️</button>
+              </div>
+            </div>
+          </article>`).join('')}
+      </div>`;
+  }
+
+  list.innerHTML = html;
+}
+
+function toggleArchivedSection(el) {
+  const sec  = document.getElementById('archivedList');
+  const open = sec.style.display === 'none';
+  sec.style.display = open ? 'block' : 'none';
+  el.setAttribute('aria-expanded', String(open));
+}
+
+function setHistoryFilter(el, val) {
+  historyFilter = val;
+  document.querySelectorAll('.history-filters .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory();
+}
+
+function renderHistory() {
+  renderWeekChart();
+
+  const listEl   = document.getElementById('historyList');
+  const filtered = historyFilter === 'all'    ? history
+                 : historyFilter === 'taken'  ? history.filter(h => !h.missed)
+                 :                              history.filter(h => h.missed);
+
+  if (!filtered.length) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">📊</div>
+        <h3>No history yet</h3>
+        <p>Your dose history will appear here as you mark medications as taken each day.</p>
+      </div>`;
+    return;
+  }
+
+  const groups = {};
+  filtered.forEach(h => { if (!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
+
+  const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a)).slice(0, 60);
+
+  listEl.innerHTML = sortedDates.map(date => {
+    const label     = formatHistoryDate(date);
+    const entries   = groups[date].sort((a, b) => a.doseTime.localeCompare(b.doseTime));
+    const dayTotal  = entries.length;
+    const dayTaken  = entries.filter(e => !e.missed).length;
+    const dayPct    = Math.round((dayTaken / dayTotal) * 100);
+
+    return `
+      <div class="history-date-group">
+        <div class="history-date-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>${label}</span>
+          <span style="color:${dayPct >= 80 ? 'var(--green)' : dayPct >= 50 ? 'var(--amber)' : 'var(--red)'};font-weight:700">${dayPct}%</span>
+        </div>
+        ${entries.map(e => `
+          <div class="history-entry">
+            <div class="h-pill-dot" style="background:${esc(e.color || 'var(--teal)')}" aria-hidden="true"></div>
+            <div class="h-pill-name">${esc(e.pillName)}</div>
+            ${e.dose ? `<span class="h-dose">${esc(e.dose)}</span>` : ''}
+            <span class="h-time">${e.doseTime}</span>
+            <span class="h-status ${e.missed ? 'h-missed' : 'h-taken'}">${e.missed ? 'Missed' : 'Taken'}</span>
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+}
+
+function formatHistoryDate(dateStr) {
+  const today = todayKey();
+  const yd    = new Date(); yd.setDate(yd.getDate() - 1);
+  const yStr  = yd.toISOString().slice(0, 10);
+  if (dateStr === today) return 'Today';
+  if (dateStr === yStr)  return 'Yesterday';
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function renderWeekChart() {
+  const chartEl = document.getElementById('weekChart');
+  const today   = new Date();
+  let totalPct = 0, validDays = 0;
+
+  const bars = Array.from({ length: 7 }, (_, i) => {
+    const d   = new Date(today); d.setDate(d.getDate() - 6 + i);
+    const str = d.toISOString().slice(0, 10);
+    const day = history.filter(h => h.date === str);
+    const tot = day.length;
+    const tak = day.filter(h => !h.missed).length;
+    const pct = tot > 0 ? Math.round((tak / tot) * 100) : null;
+    if (pct !== null) { totalPct += pct; validDays++; }
+    return {
+      pct,
+      barClass: pct === null ? 'none' : pct >= 80 ? 'good' : 'partial',
+      height:   pct === null ? 4 : Math.max(4, pct * 0.55),
+      day:      d.toLocaleDateString('en', { weekday: 'short' }).slice(0, 2),
+    };
+  });
+
+  document.getElementById('weekAdherencePct').textContent =
+    validDays > 0 ? Math.round(totalPct / validDays) + '%' : '–';
+
+  chartEl.innerHTML = bars.map(b => `
+    <div class="week-bar-wrap">
+      <div class="week-bar ${b.barClass}" style="height:${b.height}px" role="presentation"></div>
+      <span class="week-day-label">${b.day}</span>
+      <span class="week-pct">${b.pct !== null ? b.pct + '%' : ''}</span>
+    </div>`).join('');
+}
+
+function toggleSetting(key) {
+  appSettings[key] = !appSettings[key];
+  saveSettings();
+  applySettings();
+}
+
+function applySettings() {
+  const elBtn = document.getElementById('toggleElderly');
+  const moBtn = document.getElementById('toggleMotion');
+
+  elBtn.classList.toggle('on', !!appSettings.elderly);
+  moBtn.classList.toggle('on', !!appSettings.reducedMotion);
+  elBtn.setAttribute('aria-checked', String(!!appSettings.elderly));
+  moBtn.setAttribute('aria-checked', String(!!appSettings.reducedMotion));
+
+  document.body.classList.toggle('elderly', !!appSettings.elderly);
+
+  if (appSettings.reducedMotion) {
+    let s = document.getElementById('reducedMotionStyle');
+    if (!s) { s = document.createElement('style'); s.id = 'reducedMotionStyle'; document.head.appendChild(s); }
+    s.textContent = '*, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }';
+  } else {
+    document.getElementById('reducedMotionStyle')?.remove();
+  }
+}
+
+function updateDiagnostics() {
+  const perm   = 'Notification' in window ? Notification.permission : 'not-supported';
+  const permEl = document.getElementById('diagNotif');
+  permEl.textContent = perm;
+  permEl.className   = 'diag-val ' + (perm === 'granted' ? 'diag-ok' : perm === 'denied' ? 'diag-err' : 'diag-warn');
+
+  const swEl = document.getElementById('diagSW');
+  swEl.textContent = swReg ? 'Active' : 'Not registered';
+  swEl.className   = 'diag-val ' + (swReg ? 'diag-ok' : 'diag-err');
+
+  document.getElementById('diagLastNotif').textContent = lastNotifTime ? lastNotifTime.toLocaleTimeString() : 'None this session';
+  document.getElementById('diagChains').textContent    = Object.keys(chains).length;
+  document.getElementById('diagSnooze').textContent    = Storage.get('pc_snoozed', []).length;
+  document.getElementById('diagPWA').textContent       = window.matchMedia('(display-mode: standalone)').matches ? 'Yes' : 'No';
+  document.getElementById('storageSize').textContent   = Storage.size();
+}
+
+function exportData() {
+  const data = {
+    version:    9,
+    exportedAt: new Date().toISOString(),
+    appName:    'PillCare',
+    pills, history,
+    settings:   appSettings,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'pillcare-backup-' + todayKey() + '.json';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📦 Backup exported successfully');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.pills || !Array.isArray(data.pills)) throw new Error('Invalid format — missing pills array');
+      if (data.appName && data.appName !== 'PillCare') throw new Error('This backup is not from PillCare');
+
+      openModal({
+        icon:         '📦',
+        title:        'Import Backup?',
+        body:         `This will replace your current ${pills.length} medication(s) with ${data.pills.length} from the backup (version ${data.version || 'unknown'}, exported ${data.exportedAt ? new Date(data.exportedAt).toLocaleDateString() : 'unknown'}).`,
+        confirmText:  'Import',
+        confirmClass: 'btn-primary',
+        onConfirm: () => {
+          pills   = data.pills;
+          history = data.history || [];
+          if (data.settings) appSettings = { ...appSettings, ...data.settings };
+          savePills(); saveHistory(); saveSettings();
+          applySettings(); renderAll();
+          showToast('✅ Backup imported — ' + pills.length + ' medications restored');
+        }
+      });
+    } catch(err) {
+      showToast('❌ Invalid backup file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  document.getElementById('installBanner').classList.remove('hidden');
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.add('hidden');
+  showToast('🎉 PillCare installed on home screen!');
+});
+
+function installApp() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  deferredInstall.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      document.getElementById('installBanner').classList.add('hidden');
+      deferredInstall = null;
+    }
+  });
+}
+
+function dismissInstall() {
+  document.getElementById('installBanner').classList.add('hidden');
+}
+
+function showOnboarding() {
+  if (!Storage.get('pc_onboarded', false)) {
+    document.getElementById('onboarding').classList.remove('hidden');
+  }
+}
+
+function finishOnboarding() {
+  Storage.set('pc_onboarded', true);
+  document.getElementById('onboarding').classList.add('hidden');
+  if ('Notification' in window && Notification.permission === 'default') {
+    requestNotifPermission();
+  }
+}
+
+let toastTid;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTid);
+  toastTid = setTimeout(() => t.classList.remove('show'), 3600);
+}
+
+function renderAll() {
+  const activePage = document.querySelector('.page.active')?.id;
+  renderToday();
+  if (activePage === 'page-meds')    renderMeds();
+  if (activePage === 'page-history') renderHistory();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('modalOverlay').classList.contains('open')) { closeModal(); return; }
+    if (document.getElementById('sheet').classList.contains('open'))        { closeSheet(); return; }
+  }
+});
+
+document.querySelectorAll('.color-dot').forEach(dot => {
+  dot.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickColor(dot); }
+  });
+});
+
+document.getElementById('updateBanner').addEventListener('keydown', e => {
+  if (e.key === 'Enter') reloadForUpdate();
+});
+
+(async () => {
+  loadState();
+  showOnboarding();
+  applySettings();
+  updateBannerVisibility();
+  await initSW();
+  renderAll();
+  checkReminders();
+  setInterval(renderAll, 30000);
+})();
+</script>
+</body>
+</html>
