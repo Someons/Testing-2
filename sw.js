@@ -1,333 +1,178 @@
+/* PillCare Service Worker v12.0
+   Handles: caching, background sync, notification actions, keep-alive PING */
 'use strict';
 
-/* ═══════════════════════════════════════════════════════
-   PILLCARE SERVICE WORKER  —  v9.0
-   Handles: caching, offline, push notifications,
-            notification actions (Taken / Snooze),
-            periodic background sync, SW lifecycle.
-═══════════════════════════════════════════════════════ */
+const CACHE    = 'pillcare-v12';
+const SHELL    = ['./','./index.html','./manifest.json'];
 
-const CACHE_NAME  = 'pillcare-v9';
-const STATIC_URLS = [
-  './',
-  './index.html',
-  './manifest.json',
-];
-
-// In-memory snapshot synced from the main page
-let snapshot = { pills: [], taken: {}, lastNotif: {} };
-
-/* ── Install ── */
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(STATIC_URLS))
+// ── Install: pre-cache shell ──
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(SHELL))
       .then(() => self.skipWaiting())
-      .catch(err => console.warn('[SW] Cache install partial:', err))
   );
 });
 
-/* ── Activate ── */
-self.addEventListener('activate', event => {
-  event.waitUntil(
+// ── Activate: remove old caches ──
+self.addEventListener('activate', e => {
+  e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => k !== CACHE_NAME)
-          .map(k => caches.delete(k))
-      )
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
-/* ── Fetch (cache-first for static, network-first for others) ── */
-self.addEventListener('fetch', event => {
-  const { request } = event;
+// ── Fetch: cache-first for shell, network-first for others ──
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  // Don't intercept cross-origin (fonts etc.)
+  if (url.origin !== location.origin) return;
 
-  // Only handle same-origin GET requests
-  if (request.method !== 'GET') return;
-  if (!request.url.startsWith(self.location.origin)) return;
-
-  event.respondWith(
-    caches.match(request).then(cached => {
-      const networkFetch = fetch(request)
-        .then(response => {
-          if (response && response.status === 200 && response.type === 'basic') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => null);
-
-      // For HTML pages: network-first so updates are picked up
-      if (request.headers.get('accept')?.includes('text/html')) {
-        return networkFetch.then(r => r || cached) || cached;
-      }
-      // Everything else: cache-first
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const networkFetch = fetch(e.request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => cached);
       return cached || networkFetch;
     })
   );
 });
 
-/* ── Message handler (from main page) ── */
-self.addEventListener('message', event => {
-  const msg = event.data;
+// ── In-memory snapshot from main thread ──
+let _snapshot = { pills: [], taken: {}, lastNotif: {} };
+
+self.addEventListener('message', e => {
+  const msg = e.data;
   if (!msg?.type) return;
 
-  switch (msg.type) {
-
-    case 'SKIP_WAITING':
-      self.skipWaiting();
-      break;
-
-    case 'UPDATE_SNAPSHOT':
-      if (msg.snapshot) {
-        snapshot = { ...snapshot, ...msg.snapshot };
-      }
-      // Reply so the page can confirm SW is alive
-      event.source?.postMessage({ type: 'PONG' });
-      break;
-
-    case 'PING':
-      event.source?.postMessage({ type: 'PONG' });
-      break;
-
-    default:
-      break;
+  if (msg.type === 'UPDATE_SNAPSHOT') {
+    _snapshot = msg.snapshot || _snapshot;
+    return;
+  }
+  if (msg.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+  if (msg.type === 'PING') {
+    e.source?.postMessage({ type: 'PONG' });
+    return;
   }
 });
 
-/* ── Periodic Background Sync ── */
-self.addEventListener('periodicsync', event => {
-  if (event.tag === 'check-reminders') {
-    event.waitUntil(checkScheduledReminders());
-  }
-});
-
-/* ── Push ── */
-self.addEventListener('push', event => {
-  let data = {};
-  try { data = event.data?.json() || {}; } catch (e) { /* ignore */ }
-
-  const title   = data.title   || '💊 PillCare';
-  const options = {
-    body:               data.body    || 'Time to take your medication.',
-    icon:               data.icon    || 'icons/icon-192.png',
-    badge:              data.badge   || 'icons/icon-72.png',
-    vibrate:            data.vibrate || [200, 50, 200],
-    tag:                data.tag     || 'pillcare-push',
-    requireInteraction: data.requireInteraction || false,
-    data:               data.data    || {},
-    actions: [
-      { action: 'taken',  title: '✅ Mark Taken' },
-      { action: 'snooze', title: '⏰ Snooze 5 min' },
-    ],
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-/* ── Notification click ── */
-self.addEventListener('notificationclick', event => {
-  const notif   = event.notification;
-  const action  = event.action;
-  const data    = notif.data || {};
-
-  notif.close();
+// ── Notification action handler ──
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const { action, notification } = e;
+  const data = notification.data || {};
 
   if (action === 'taken') {
-    event.waitUntil(
-      broadcastToClients({ type: 'MARK_TAKEN', pillId: data.pillId, doseTime: data.doseTime, date: data.date })
-        .then(delivered => {
-          if (!delivered) markTakenInStorage(data.pillId, data.doseTime);
-        })
-    );
-    return;
-  }
-
-  if (action === 'snooze') {
-    const fireAt = Date.now() + 5 * 60 * 1000;
-    event.waitUntil(
-      broadcastToClients({
-        type:   'STORE_SNOOZE',
-        pillId: data.pillId,
-        name:   data.name,
-        dose:   data.dose,
-        time:   data.doseTime,
-        fireAt,
-      }).then(delivered => {
-        if (!delivered) storeSnoozeFallback(data.pillId, data.name, data.dose, data.doseTime, fireAt);
+    // Tell all clients to mark the dose
+    e.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+        clients.forEach(c => c.postMessage({ type: 'MARK_TAKEN', pillId: data.pillId, doseTime: data.doseTime }));
+        if (!clients.length) return self.clients.openWindow('./');
       })
     );
-    return;
+  } else if (action === 'snooze') {
+    const fireAt = Date.now() + 5 * 60 * 1000;
+    e.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+        clients.forEach(c => c.postMessage({
+          type: 'STORE_SNOOZE', pillId: data.pillId,
+          name: data.name, dose: data.dose, time: data.doseTime, fireAt
+        }));
+        // Re-fire after 5 min via SW alarm (best-effort)
+        setTimeout(() => {
+          self.registration.showNotification(`⏰ ${data.name}`, {
+            body: [data.dose, 'Time to take your dose'].filter(Boolean).join(' · '),
+            icon: 'icons/icon-192.png',
+            badge: 'icons/icon-72.png',
+            vibrate: [180, 50, 180],
+            data,
+            actions: [
+              { action: 'taken',  title: '✓ Mark taken' },
+              { action: 'snooze', title: '⏰ Snooze again' },
+            ]
+          });
+        }, 5 * 60 * 1000);
+      })
+    );
+  } else {
+    // Default: focus or open the app
+    e.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+        const focused = clients.find(c => c.focused);
+        if (focused) return focused.focus();
+        if (clients.length) return clients[0].focus();
+        return self.clients.openWindow('./');
+      })
+    );
   }
-
-  // Default: open / focus the app
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-      for (const client of clients) {
-        if ('focus' in client) {
-          client.focus();
-          client.postMessage({ type: 'FOCUS_PILL', pillId: data.pillId });
-          return;
-        }
-      }
-      return self.clients.openWindow('./');
-    })
-  );
 });
 
-/* ── Notification close ── */
-self.addEventListener('notificationclose', event => {
-  broadcastToClients({ type: 'NOTIFICATION_DISMISSED', data: event.notification.data });
+// ── Periodic background sync (when granted) ──
+self.addEventListener('periodicsync', e => {
+  if (e.tag === 'check-reminders') {
+    e.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(clients => {
+        // If app is open, it handles its own reminders — do nothing
+        if (clients.length) return;
+        // App is closed — basic time check from snapshot
+        _checkSnapshotReminders();
+      })
+    );
+  }
 });
 
-/* ══════════════════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════════════════ */
+function _checkSnapshotReminders() {
+  const now  = new Date();
+  const hm   = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-/**
- * Send a message to all connected window clients.
- * Returns true if at least one client received it.
- */
-async function broadcastToClients(msg) {
-  try {
-    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    clients.forEach(c => c.postMessage(msg));
-    return clients.length > 0;
-  } catch (e) {
-    return false;
-  }
+  (_snapshot.pills || []).forEach(pill => {
+    if (pill.archived) return;
+    const doses = _getDoses(pill);
+    doses.forEach((doseTime, idx) => {
+      if (doseTime !== hm) return;
+      if (_snapshot.taken?.[pill.id + '_dose' + idx]) return;
+      self.registration.showNotification(`💊 ${pill.name}`, {
+        body: [pill.dose, `Scheduled: ${doseTime}`].filter(Boolean).join(' · '),
+        icon: 'icons/icon-192.png',
+        badge: 'icons/icon-72.png',
+        vibrate: [180, 50, 180],
+        data: { pillId: pill.id, doseTime, date: today, name: pill.name, dose: pill.dose },
+        actions: [
+          { action: 'taken',  title: '✓ Mark taken' },
+          { action: 'snooze', title: '⏰ Snooze 5 min' },
+        ]
+      });
+    });
+  });
 }
 
-/** Simple date key helper: YYYY-MM-DD */
-function todayKey() {
-  const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-/**
- * Fallback: write "taken" to localStorage when the main page is closed.
- * Relies on the snapshot injected via UPDATE_SNAPSHOT.
- */
-function markTakenInStorage(pillId, doseTime) {
-  try {
-    const pill    = (snapshot.pills || []).find(p => p.id === pillId);
-    if (!pill) return;
-
-    const taken   = JSON.parse(self.localStorage?.getItem('pc_taken') || '{}');
-    const doses   = getDoseTimes(pill);
-    let idx       = doses.indexOf(doseTime);
-    if (idx < 0) idx = 0;
-    taken[pillId + '_dose' + idx] = new Date().toISOString();
-    self.localStorage?.setItem('pc_taken', JSON.stringify(taken));
-  } catch (e) { /* localStorage not accessible in SW context */ }
-}
-
-/**
- * Fallback snooze write when the main page is closed.
- */
-function storeSnoozeFallback(pillId, name, dose, time, fireAt) {
-  try {
-    const snoozed = JSON.parse(self.localStorage?.getItem('pc_snoozed') || '[]');
-    const entry   = { id: pillId + '-' + fireAt, pillId, name, dose, time, fireAt };
-    if (!snoozed.find(s => s.id === entry.id)) {
-      snoozed.push(entry);
-      self.localStorage?.setItem('pc_snoozed', JSON.stringify(snoozed));
-    }
-  } catch (e) { /* localStorage not accessible in SW context */ }
-}
-
-/**
- * Lightweight dose-time calculator (mirrors main-page logic).
- */
-function getDoseTimes(pill) {
-  const pad      = n => String(n).padStart(2, '0');
-  const hmStr    = (h, m) => `${pad(h)}:${pad(m)}`;
-  const hmToMins = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
-  const clamp    = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-
+function _getDoses(pill) {
+  if (!pill) return [];
   if (pill.freq === 'once') return [pill.time];
-
   if (pill.freq === 'custom') {
-    const count        = clamp(parseInt(pill.count) || 1, 1, 12);
-    const intervalMins = Math.round(1440 / count);
-    const startMins    = hmToMins(pill.time || '08:00');
-    const doses        = [];
-    for (let i = 0; i < count; i++) {
-      const mins = (startMins + i * intervalMins) % 1440;
-      doses.push(hmStr(Math.floor(mins / 60), Math.round(mins) % 60));
-    }
+    const ivMins = Math.max(Math.round((parseFloat(pill.intervalHours) || 6) * 60), 10);
+    const start  = _hmToMins(pill.time || '08:00');
+    const doses  = [];
+    for (let t = start; t < 1440 && doses.length < 24; t += ivMins) doses.push(_minsToHm(t));
     return doses;
   }
-
   if (pill.freq === 'weekly') {
-    const today = new Date().getDay();
-    const days  = (pill.weekDays || []).map(Number);
-    return days.includes(today) ? [pill.time] : [];
+    const dow = new Date().getDay();
+    return (pill.weekDays || []).map(Number).includes(dow) ? [pill.time] : [];
   }
-
-  if (pill.freq === 'monthly') {
-    return pill.monthDay === new Date().getDate() ? [pill.time] : [];
-  }
-
+  if (pill.freq === 'monthly') return pill.monthDay === new Date().getDate() ? [pill.time] : [];
   return [pill.time || '08:00'];
 }
 
-/**
- * Called by periodic background sync to fire any overdue reminders.
- * Only runs when no window clients are open (otherwise the page handles it).
- */
-async function checkScheduledReminders() {
-  try {
-    const clients = await self.clients.matchAll({ type: 'window' });
-    if (clients.length > 0) return; // page is open — it manages reminders
-
-    const pills   = snapshot.pills || [];
-    const taken   = snapshot.taken || {};
-    const now     = new Date();
-    const hm      = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-    for (const pill of pills) {
-      if (pill.archived) continue;
-      const doses = getDoseTimes(pill);
-
-      doses.forEach((doseTime, idx) => {
-        const takenKey = pill.id + '_dose' + idx;
-        if (taken[takenKey]) return;
-        if (doseTime !== hm)  return;
-
-        const label = doses.length > 1
-          ? `${pill.name} (${idx + 1}/${doses.length})`
-          : pill.name;
-
-        const tag = `pc-${pill.id}-${doseTime.replace(':','')}-${todayKey()}`;
-
-        self.registration.showNotification(`💊 ${label}`, {
-          body:               [pill.dose || '', `Scheduled: ${doseTime}`].filter(Boolean).join(' · '),
-          icon:               'icons/icon-192.png',
-          badge:              'icons/icon-72.png',
-          vibrate:            [200, 50, 200],
-          requireInteraction: pill.priority === 'critical' || pill.priority === 'high',
-          tag,
-          actions: [
-            { action: 'taken',  title: '✅ Mark Taken' },
-            { action: 'snooze', title: '⏰ Snooze 5 min' },
-          ],
-          data: {
-            pillId:   pill.id,
-            doseTime,
-            date:     todayKey(),
-            name:     label,
-            dose:     pill.dose,
-            priority: pill.priority,
-          },
-        }).catch(() => {});
-      });
-    }
-  } catch (e) {
-    broadcastToClients({ type: 'SW_ERROR', message: String(e) });
-  }
-                          }
+function _hmToMins(hm) { const [h, m] = hm.split(':').map(Number); return h * 60 + m; }
+function _minsToHm(m)  { return `${String(Math.floor(m / 60) % 24).padStart(2,'0')}:${String(Math.round(m) % 60).padStart(2,'0')}`; }
