@@ -1,178 +1,196 @@
-/* PillCare Service Worker v12.0
-   Handles: caching, background sync, notification actions, keep-alive PING */
 'use strict';
 
-const CACHE    = 'pillcare-v12';
-const SHELL    = ['./','./index.html','./manifest.json'];
+/* ─────────────────────────────────────────────
+   PillCare Service Worker  —  sw.js
+   Place this file in the SAME folder as index.html
+   It handles background notifications even when
+   the browser tab is closed or in the background.
+───────────────────────────────────────────────── */
 
-// ── Install: pre-cache shell ──
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(SHELL))
-      .then(() => self.skipWaiting())
-  );
-});
+const SW_VERSION = 'pillcare-sw-v3';
 
-// ── Activate: remove old caches ──
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
+// ── Helpers ──────────────────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
 
-// ── Fetch: cache-first for shell, network-first for others ──
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  // Don't intercept cross-origin (fonts etc.)
-  if (url.origin !== location.origin) return;
-
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      const networkFetch = fetch(e.request).then(res => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      }).catch(() => cached);
-      return cached || networkFetch;
-    })
-  );
-});
-
-// ── In-memory snapshot from main thread ──
-let _snapshot = { pills: [], taken: {}, lastNotif: {} };
-
-self.addEventListener('message', e => {
-  const msg = e.data;
-  if (!msg?.type) return;
-
-  if (msg.type === 'UPDATE_SNAPSHOT') {
-    _snapshot = msg.snapshot || _snapshot;
-    return;
-  }
-  if (msg.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-    return;
-  }
-  if (msg.type === 'PING') {
-    e.source?.postMessage({ type: 'PONG' });
-    return;
-  }
-});
-
-// ── Notification action handler ──
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  const { action, notification } = e;
-  const data = notification.data || {};
-
-  if (action === 'taken') {
-    // Tell all clients to mark the dose
-    e.waitUntil(
-      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-        clients.forEach(c => c.postMessage({ type: 'MARK_TAKEN', pillId: data.pillId, doseTime: data.doseTime }));
-        if (!clients.length) return self.clients.openWindow('./');
-      })
-    );
-  } else if (action === 'snooze') {
-    const fireAt = Date.now() + 5 * 60 * 1000;
-    e.waitUntil(
-      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-        clients.forEach(c => c.postMessage({
-          type: 'STORE_SNOOZE', pillId: data.pillId,
-          name: data.name, dose: data.dose, time: data.doseTime, fireAt
-        }));
-        // Re-fire after 5 min via SW alarm (best-effort)
-        setTimeout(() => {
-          self.registration.showNotification(`⏰ ${data.name}`, {
-            body: [data.dose, 'Time to take your dose'].filter(Boolean).join(' · '),
-            icon: 'icons/icon-192.png',
-            badge: 'icons/icon-72.png',
-            vibrate: [180, 50, 180],
-            data,
-            actions: [
-              { action: 'taken',  title: '✓ Mark taken' },
-              { action: 'snooze', title: '⏰ Snooze again' },
-            ]
-          });
-        }, 5 * 60 * 1000);
-      })
-    );
-  } else {
-    // Default: focus or open the app
-    e.waitUntil(
-      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-        const focused = clients.find(c => c.focused);
-        if (focused) return focused.focus();
-        if (clients.length) return clients[0].focus();
-        return self.clients.openWindow('./');
-      })
-    );
-  }
-});
-
-// ── Periodic background sync (when granted) ──
-self.addEventListener('periodicsync', e => {
-  if (e.tag === 'check-reminders') {
-    e.waitUntil(
-      self.clients.matchAll({ type: 'window' }).then(clients => {
-        // If app is open, it handles its own reminders — do nothing
-        if (clients.length) return;
-        // App is closed — basic time check from snapshot
-        _checkSnapshotReminders();
-      })
-    );
-  }
-});
-
-function _checkSnapshotReminders() {
-  const now  = new Date();
-  const hm   = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-  (_snapshot.pills || []).forEach(pill => {
-    if (pill.archived) return;
-    const doses = _getDoses(pill);
-    doses.forEach((doseTime, idx) => {
-      if (doseTime !== hm) return;
-      if (_snapshot.taken?.[pill.id + '_dose' + idx]) return;
-      self.registration.showNotification(`💊 ${pill.name}`, {
-        body: [pill.dose, `Scheduled: ${doseTime}`].filter(Boolean).join(' · '),
-        icon: 'icons/icon-192.png',
-        badge: 'icons/icon-72.png',
-        vibrate: [180, 50, 180],
-        data: { pillId: pill.id, doseTime, date: today, name: pill.name, dose: pill.dose },
-        actions: [
-          { action: 'taken',  title: '✓ Mark taken' },
-          { action: 'snooze', title: '⏰ Snooze 5 min' },
-        ]
-      });
-    });
-  });
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 }
 
-function _getDoses(pill) {
-  if (!pill) return [];
-  if (pill.freq === 'once') return [pill.time];
+function getDoses(pill) {
+  if (!pill || pill.archived) return [];
+  if (pill.freq === 'once') return [pill.time || '08:00'];
   if (pill.freq === 'custom') {
-    const ivMins = Math.max(Math.round((parseFloat(pill.intervalHours) || 6) * 60), 10);
-    const start  = _hmToMins(pill.time || '08:00');
-    const doses  = [];
-    for (let t = start; t < 1440 && doses.length < 24; t += ivMins) doses.push(_minsToHm(t));
+    const iv   = Math.max(Math.round((parseFloat(pill.intervalHours) || 6) * 60), 10);
+    const [sh, sm] = (pill.time || '08:00').split(':').map(Number);
+    const doses = [];
+    for (let t = sh * 60 + sm; t < 1440 && doses.length < 24; t += iv)
+      doses.push(pad(Math.floor(t / 60)) + ':' + pad(t % 60));
     return doses;
   }
   if (pill.freq === 'weekly') {
     const dow = new Date().getDay();
-    return (pill.weekDays || []).map(Number).includes(dow) ? [pill.time] : [];
+    return (pill.weekDays || []).map(Number).includes(dow) ? [pill.time || '08:00'] : [];
   }
-  if (pill.freq === 'monthly') return pill.monthDay === new Date().getDate() ? [pill.time] : [];
+  if (pill.freq === 'monthly') {
+    const now = new Date();
+    const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return Math.min(pill.monthDay || 1, dim) === now.getDate() ? [pill.time || '08:00'] : [];
+  }
   return [pill.time || '08:00'];
 }
 
-function _hmToMins(hm) { const [h, m] = hm.split(':').map(Number); return h * 60 + m; }
-function _minsToHm(m)  { return `${String(Math.floor(m / 60) % 24).padStart(2,'0')}:${String(Math.round(m) % 60).padStart(2,'0')}`; }
+// ── Alarm scheduler ──────────────────────────
+let _timers   = [];
+let _snapshot = null;
+
+function cancelAll() {
+  _timers.forEach(t => clearTimeout(t));
+  _timers = [];
+}
+
+function scheduleAll(snapshot) {
+  cancelAll();
+  if (!snapshot) return;
+
+  const { pills = [], taken = {}, snoozed = [], firedKeys = [] } = snapshot;
+  const now   = Date.now();
+  const today = todayStr();
+
+  pills.forEach(pill => {
+    if (pill.archived) return;
+    getDoses(pill).forEach((doseTime, idx) => {
+      // Skip already taken
+      if (taken[pill.id + '_dose' + idx]) return;
+
+      const [h, m]  = doseTime.split(':').map(Number);
+      const fireMs  = new Date().setHours(h, m, 0, 0);
+      const delay   = fireMs - now;
+
+      // Only schedule future doses within next 12 hours
+      if (delay < 0 || delay > 12 * 3600 * 1000) return;
+
+      const key = pill.id + '_' + today + '_' + doseTime + '_' + idx;
+      if (firedKeys.includes(key)) return; // already notified
+
+      _timers.push(setTimeout(() => {
+        self.registration.showNotification('💊 ' + pill.name, {
+          body:                [pill.dose, 'Tap to mark as taken'].filter(Boolean).join(' · '),
+          icon:                'icons/icon-192.png',
+          badge:               'icons/icon-72.png',
+          tag:                 'pillcare-dose-' + key,
+          renotify:            false,
+          requireInteraction:  pill.priority === 'critical' || pill.priority === 'high',
+          actions: [
+            { action: 'taken', title: '✓  Mark taken' },
+            { action: 'snooze', title: '⏰  +5 min' }
+          ],
+          data: { pillId: pill.id, doseTime, date: today, name: pill.name, dose: pill.dose || '' }
+        }).catch(() => {});
+
+        // Notify the open page that this dose was fired so it marks firedKeys
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+          .then(cs => cs.forEach(c => c.postMessage({ type: 'DOSE_FIRED', key, pillId: pill.id, doseTime })));
+      }, delay));
+    });
+  });
+
+  // Snoozed doses
+  snoozed.forEach(sv => {
+    const delay = sv.fireAt - now;
+    if (delay < 0 || delay > 8 * 3600 * 1000) return;
+
+    _timers.push(setTimeout(() => {
+      self.registration.showNotification('⏰ ' + sv.name, {
+        body:    (sv.dose ? sv.dose + ' · ' : '') + 'Snoozed reminder',
+        icon:    'icons/icon-192.png',
+        badge:   'icons/icon-72.png',
+        tag:     'pillcare-snooze-' + sv.id,
+        actions: [
+          { action: 'taken', title: '✓  Mark taken' },
+          { action: 'snooze', title: '⏰  +5 min' }
+        ],
+        data: { pillId: sv.pillId, doseTime: sv.time, date: today, name: sv.name, dose: sv.dose || '', isSnooze: true }
+      }).catch(() => {});
+    }, delay));
+  });
+}
+
+// ── Lifecycle ────────────────────────────────
+self.addEventListener('install', () => {
+  console.log('[PillCare SW] Installed', SW_VERSION);
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  console.log('[PillCare SW] Activated');
+  e.waitUntil(self.clients.claim());
+});
+
+// ── Messages from page ───────────────────────
+self.addEventListener('message', e => {
+  if (!e.data) return;
+  switch (e.data.type) {
+    case 'UPDATE_SNAPSHOT':
+      _snapshot = e.data.snapshot;
+      scheduleAll(_snapshot);
+      break;
+    case 'SKIP_WAITING':
+      self.skipWaiting();
+      break;
+    case 'PING':
+      // Keep-alive — reschedule to handle any timer drift
+      if (_snapshot) scheduleAll(_snapshot);
+      break;
+  }
+});
+
+// ── Notification actions ─────────────────────
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const d = e.notification.data || {};
+
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+      const target = cs.find(c => c.visibilityState === 'visible') || cs[0];
+
+      if (e.action === 'taken') {
+        if (target) {
+          target.focus();
+          target.postMessage({ type: 'MARK_TAKEN', pillId: d.pillId, doseTime: d.doseTime, date: d.date });
+        } else {
+          self.clients.openWindow('./');
+        }
+      } else if (e.action === 'snooze') {
+        const fireAt = Date.now() + 5 * 60 * 1000;
+        if (target) {
+          target.focus();
+          target.postMessage({ type: 'STORE_SNOOZE', pillId: d.pillId, name: d.name, dose: d.dose, time: d.doseTime, fireAt });
+        } else {
+          self.clients.openWindow('./');
+        }
+      } else {
+        // Just tapped — open the app
+        if (target) target.focus();
+        else self.clients.openWindow('./');
+      }
+    })
+  );
+});
+
+// ── Fetch — serve cached app shell ───────────
+self.addEventListener('fetch', e => {
+  // Only cache GET requests for our own origin
+  if (e.request.method !== 'GET') return;
+  e.respondWith(
+    caches.open(SW_VERSION).then(cache =>
+      cache.match(e.request).then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(resp => {
+          if (resp.ok) cache.put(e.request, resp.clone());
+          return resp;
+        }).catch(() => cached);
+      })
+    )
+  );
+});
