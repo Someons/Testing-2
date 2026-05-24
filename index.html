@@ -1,0 +1,4016 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<!-- FIX: maximum-scale=5 allows user zoom (WCAG 1.4.4) while still preventing unwanted iOS auto-zoom -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, interactive-widget=resizes-content">
+<!-- FIX: Content Security Policy — prevents XSS from dynamic HTML injection -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';"
+>
+<meta name="theme-color" content="#56b4a8">
+<meta name="description" content="PillCare — A calm, trusted companion for your daily medications.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PillCare">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+<title>PillCare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   § 1  DESIGN TOKENS — Single source of truth
+   WHY: CSS variables prevent magic numbers, ensure consistency,
+   make theming trivially safe. Healthcare apps need calm,
+   high-contrast palettes — not neon dashboards.
+═══════════════════════════════════════════════════════════ */
+:root {
+  /* Background hierarchy — deep, calm blues not harsh blacks */
+  --c-bg:        #0a0f18;
+  --c-bg2:       #0e1520;
+  --c-surface:   #141c28;
+  --c-surface2:  #192232;
+  --c-surface3:  #1e293d;
+  --c-surface4:  #243047;
+
+  /* Borders — subtle depth, not harsh lines */
+  --c-border:    rgba(255,255,255,0.055);
+  --c-border2:   rgba(255,255,255,0.10);
+  --c-border3:   rgba(255,255,255,0.16);
+  --c-border4:   rgba(255,255,255,0.22);
+
+  /* Brand — sage-teal. Calming, medical, trustworthy */
+  --c-sage:      #56b4a8;
+  --c-sage2:     #3d9e93;
+  --c-sage3:     #2d7a70;
+  --c-sage-dim:  rgba(86,180,168,0.12);
+  --c-sage-soft: rgba(86,180,168,0.06);
+
+  /* Semantic colours — muted, not alarming */
+  --c-amber:     #e8a94a;
+  --c-amber2:    #c47d1e;
+  --c-amber-dim: rgba(232,169,74,0.10);
+  --c-rose:      #d96b6b;
+  --c-rose2:     #a83c3c;
+  --c-rose-dim:  rgba(217,107,107,0.10);
+  --c-mint:      #62c99a;
+  --c-mint2:     #2d8a60;
+  --c-mint-dim:  rgba(98,201,154,0.10);
+  --c-sky:       #68a8d8;
+  --c-lavender:  #9d8fd4;
+
+  /* Text — WCAG AA+ contrast ratios */
+  --c-text:      #e6edf4;  /* ≥7:1 on --c-bg */
+  --c-text2:     #94a8b8;  /* ≥4.5:1 on --c-bg */
+  --c-text3:     #536070;  /* Decorative / metadata */
+  --c-text4:     #323f4b;
+
+  /* Radii */
+  --r:      14px;
+  --r-sm:   9px;
+  --r-lg:   20px;
+  --r-xl:   28px;
+  --r-pill: 99px;
+
+  /* Spacing — 4pt grid */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 14px;
+  --sp-lg: 20px;
+  --sp-xl: 28px;
+  --sp-2xl:40px;
+
+  /* Touch targets — 48px WCAG minimum */
+  --touch: 48px;
+
+  /* Type scale — minor third */
+  --fs-2xs: 0.68rem;
+  --fs-xs:  0.75rem;
+  --fs-sm:  0.84rem;
+  --fs-md:  0.94rem;
+  --fs-lg:  1.06rem;
+  --fs-xl:  1.25rem;
+  --fs-2xl: 1.6rem;
+  --fs-3xl: 2rem;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 10px rgba(0,0,0,0.30);
+  --shadow:    0 4px 24px rgba(0,0,0,0.44);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.58);
+
+  /* Transitions */
+  --ease:        cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:    cubic-bezier(0, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.25, 0.64, 1);
+  --dur-fast:  100ms;
+  --dur-base:  180ms;
+  --dur-slow:  280ms;
+}
+
+/* ── Elderly / large-text mode ── */
+body.pc-elderly {
+  --touch:  58px;
+  --r:      18px;
+  --r-sm:   12px;
+  --fs-2xs: 0.80rem;
+  --fs-xs:  0.88rem;
+  --fs-sm:  0.98rem;
+  --fs-md:  1.10rem;
+  --fs-lg:  1.26rem;
+  --fs-xl:  1.46rem;
+  --fs-2xl: 1.88rem;
+  --fs-3xl: 2.35rem;
+}
+
+/* ── High contrast mode ── */
+body.pc-hc {
+  --c-bg:      #000;
+  --c-bg2:     #080808;
+  --c-surface: #0f0f0f;
+  --c-surface2:#181818;
+  --c-border:  rgba(255,255,255,0.20);
+  --c-border2: rgba(255,255,255,0.32);
+  --c-border3: rgba(255,255,255,0.45);
+  --c-text:    #ffffff;
+  --c-text2:   #cccccc;
+  --c-text3:   #888888;
+}
+
+/* ═══════════════════════════════════════════════
+   § 2  RESET & BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; height: 100%; }
+
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Very subtle ambient gradient — calming, not decorative */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; height: 45vh;
+  background: radial-gradient(ellipse 70% 55% at 50% -15%,
+    rgba(86,180,168,0.035) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   § 3  LAYOUT
+═══════════════════════════════════════════════ */
+.app-shell {
+  max-width: 680px;
+  margin: 0 auto;
+  /* Extra 68px = FAB(52) + gap(16) so last card is never under FAB */
+  padding: 0 16px calc(140px + env(safe-area-inset-bottom, 0px));
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════
+   § 4  BOTTOM NAV
+   WHY: Fixed bottom nav needs safe-area-inset padding on iOS.
+   FAB must clear the nav — use gap calculation, not guesswork.
+═══════════════════════════════════════════════ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  /* FIX: will-change promotes to compositor layer — avoids repaint on scroll */
+  will-change: transform;
+  background: rgba(10,15,24,0.93);
+  /* FIX: reduced blur 20px→12px (~40% GPU cost reduction on low-end devices) */
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border-top: 1px solid var(--c-border2);
+  display: flex;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 4px 9px;
+  min-height: 56px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-text3);
+  font-family: var(--font-body);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: color var(--dur-base) var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.nav-btn .nav-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.nav-btn.active { color: var(--c-sage); }
+.nav-btn.active .nav-icon { transform: translateY(-2px) scale(1.05); }
+.nav-btn:hover:not(.active) { color: var(--c-text2); }
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 7px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--c-sage);
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════
+   § 5  PAGES
+═══════════════════════════════════════════════ */
+.page { display: none; padding-top: 20px; }
+.page.active {
+  display: block;
+  animation: pc-fadeUp var(--dur-slow) var(--ease-out) both;
+}
+.page-header { padding: 4px 0 20px; }
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.15;
+  color: var(--c-text);
+  letter-spacing: -0.01em;
+}
+.page-sub {
+  font-size: var(--fs-sm);
+  color: var(--c-text3);
+  margin-top: 3px;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════
+   § 6  CARDS
+═══════════════════════════════════════════════ */
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: var(--sp-lg);
+  margin-bottom: var(--sp-sm);
+}
+
+/* ═══════════════════════════════════════════════
+   § 7  TYPOGRAPHY UTILITIES
+═══════════════════════════════════════════════ */
+.label-caps {
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  color: var(--c-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.text-sage    { color: var(--c-sage); }
+.text-amber   { color: var(--c-amber); }
+.text-rose    { color: var(--c-rose); }
+.text-mint    { color: var(--c-mint); }
+.text-muted   { color: var(--c-text3); }
+
+/* ═══════════════════════════════════════════════
+   § 8  FORM ELEMENTS
+   WHY: All inputs must be 48px tall (WCAG touch target).
+   Focus rings must be visible — sage outline at 2px.
+═══════════════════════════════════════════════ */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--sp-md);
+}
+.field > label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--c-text2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.field input,
+.field select,
+.field textarea {
+  background: var(--c-surface2);
+  border: 1.5px solid var(--c-border2);
+  border-radius: var(--r-sm);
+  padding: 0 14px;
+  height: var(--touch);
+  color: var(--c-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  outline: none;
+  transition: border-color var(--dur-base), box-shadow var(--dur-base);
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field textarea {
+  height: auto;
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.55;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--c-sage);
+  box-shadow: 0 0 0 3px var(--c-sage-dim);
+}
+.field input.is-error,
+.field select.is-error { border-color: var(--c-rose); }
+.field input[type=number] { -moz-appearance: textfield; }
+.field input[type=number]::-webkit-outer-spin-button,
+.field input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+.field select option { background: var(--c-surface); color: var(--c-text); }
+.field .hint { font-size: var(--fs-xs); color: var(--c-text3); line-height: 1.4; }
+.field .hint.good { color: var(--c-mint); }
+.field .hint.warn { color: var(--c-amber); }
+.field .hint.bad  { color: var(--c-rose); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 380px) { .form-row { grid-template-columns: 1fr; } }
+
+/* ═══════════════════════════════════════════════
+   § 9  BUTTONS
+   WHY: Every button must be min 48px tall. Active state
+   scale gives immediate tactile feedback without janky animation.
+═══════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--touch);
+  padding: 0 var(--sp-lg);
+  border-radius: var(--r-sm);
+  border: none;
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--dur-fast), transform var(--dur-fast), box-shadow var(--dur-base);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--c-sage), var(--c-sage2));
+  color: #061210;
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(86,180,168,0.22);
+}
+.btn-primary:hover { opacity: 0.9; box-shadow: 0 4px 18px rgba(86,180,168,0.32); }
+
+.btn-ghost {
+  background: var(--c-surface2);
+  color: var(--c-text2);
+  border: 1.5px solid var(--c-border2);
+}
+.btn-ghost:hover { border-color: var(--c-sage); color: var(--c-sage); background: var(--c-sage-soft); }
+
+.btn-soft {
+  background: var(--c-surface2);
+  color: var(--c-text2);
+}
+.btn-soft:hover { background: var(--c-surface3); color: var(--c-text); }
+
+.btn-danger {
+  background: var(--c-rose-dim);
+  color: var(--c-rose);
+  border: 1.5px solid rgba(217,107,107,0.22);
+}
+.btn-danger:hover { background: rgba(217,107,107,0.18); }
+
+.btn-full { width: 100%; }
+
+.btn-icon {
+  width: var(--touch);
+  height: var(--touch);
+  min-width: var(--touch);
+  border-radius: var(--r-sm);
+  background: var(--c-surface2);
+  border: 1px solid var(--c-border);
+  color: var(--c-text3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.btn-icon:hover  { background: var(--c-surface3); color: var(--c-text2); border-color: var(--c-border2); }
+.btn-icon:active { transform: scale(0.93); }
+.btn-icon.is-danger:hover { background: var(--c-rose-dim); color: var(--c-rose); }
+
+/* ═══════════════════════════════════════════════
+   § 10  CHIPS & SELECTORS
+═══════════════════════════════════════════════ */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.chip {
+  background: var(--c-surface2);
+  border: 1.5px solid var(--c-border2);
+  border-radius: var(--r-pill);
+  padding: 6px 14px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--c-text2);
+  cursor: pointer;
+  transition: all var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--c-sage); color: var(--c-sage); }
+.chip.active {
+  background: var(--c-sage-dim);
+  border-color: var(--c-sage);
+  color: var(--c-sage);
+  font-weight: 600;
+}
+
+.day-chip {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--c-surface2);
+  border: 1.5px solid var(--c-border2);
+  color: var(--c-text2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-body);
+}
+.day-chip.active {
+  background: var(--c-sage-dim);
+  border-color: var(--c-sage);
+  color: var(--c-sage);
+}
+
+/* ═══════════════════════════════════════════════
+   § 11  BADGES
+═══════════════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+}
+.badge-sage   { background: var(--c-sage-dim);   color: var(--c-sage); }
+.badge-amber  { background: var(--c-amber-dim);  color: var(--c-amber); }
+.badge-rose   { background: var(--c-rose-dim);   color: var(--c-rose); }
+.badge-mint   { background: var(--c-mint-dim);   color: var(--c-mint); }
+.badge-muted  { background: rgba(255,255,255,0.05); color: var(--c-text3); }
+.badge-chain  { background: var(--c-amber-dim);  color: var(--c-amber);
+                border: 1px solid rgba(232,169,74,0.22); }
+
+/* ═══════════════════════════════════════════════
+   § 12  SECTION DIVIDERS
+═══════════════════════════════════════════════ */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  color: var(--c-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 24px 0 10px;
+}
+.section-label::before, .section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--c-border);
+}
+.section-label.no-line::before,
+.section-label.no-line::after { display: none; }
+
+/* ═══════════════════════════════════════════════
+   § 13  TODAY PAGE HEADER
+═══════════════════════════════════════════════ */
+.today-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 4px 0 18px;
+}
+.today-greeting {
+  font-size: var(--fs-sm);
+  color: var(--c-text3);
+  margin-bottom: 2px;
+}
+.today-date {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 400;
+  color: var(--c-text);
+}
+.clock-display {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--c-sage);
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════
+   § 14  BANNERS
+   WHY: Banners must not look alarming — muted tones.
+   Update banner is subtle — it's good news, not an error.
+═══════════════════════════════════════════════ */
+.pc-banner {
+  border-radius: var(--r);
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  animation: pc-fadeDown var(--dur-slow) var(--ease-out);
+}
+.pc-banner.hidden { display: none !important; }
+.pc-banner-icon { font-size: 1.2rem; flex-shrink: 0; }
+.pc-banner-body { flex: 1; }
+.pc-banner-body strong { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--c-text); }
+.pc-banner-body small  { font-size: var(--fs-xs); color: var(--c-text3); display: block; margin-top: 1px; }
+
+.banner-notif {
+  background: linear-gradient(135deg, var(--c-amber-dim), rgba(232,169,74,0.04));
+  border: 1px solid rgba(232,169,74,0.20);
+}
+.banner-install {
+  background: linear-gradient(135deg, rgba(104,168,216,0.08), rgba(104,168,216,0.03));
+  border: 1px solid rgba(104,168,216,0.18);
+}
+.banner-update {
+  background: linear-gradient(135deg, rgba(157,143,212,0.08), rgba(104,168,216,0.04));
+  border: 1px solid rgba(157,143,212,0.20);
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
+   § 15  ADHERENCE BAR
+═══════════════════════════════════════════════ */
+.adherence-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.adherence-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.adherence-label { font-size: var(--fs-sm); color: var(--c-text2); }
+.adherence-pct {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 400;
+  color: var(--c-text);
+  font-style: italic;
+}
+.adherence-track {
+  height: 6px;
+  background: var(--c-surface3);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.adherence-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transition: width 0.9s var(--ease), background 0.5s var(--ease);
+}
+
+/* ═══════════════════════════════════════════════
+   § 16  STATS ROW
+═══════════════════════════════════════════════ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.stat-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  padding: 12px 10px;
+  text-align: center;
+}
+.stat-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--c-text);
+  line-height: 1.1;
+}
+.stat-label {
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+/* ═══════════════════════════════════════════════
+   § 17  GENTLE ALERT (replaces aggressive critical-alert)
+   WHY: Healthcare UX research shows alarming reds cause
+   anxiety, especially for elderly users. A warm amber tone
+   communicates importance without panic.
+═══════════════════════════════════════════════ */
+.gentle-alert {
+  background: rgba(232,169,74,0.06);
+  border: 1px solid rgba(232,169,74,0.22);
+  border-radius: var(--r);
+  padding: 13px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gentle-alert.hidden { display: none; }
+.gentle-alert-icon { font-size: 1.2rem; flex-shrink: 0; }
+.gentle-alert-text strong { display: block; font-size: var(--fs-md); font-weight: 600; color: var(--c-amber); }
+.gentle-alert-text span   { font-size: var(--fs-xs); color: var(--c-text2); line-height: 1.4; }
+
+/* ═══════════════════════════════════════════════
+   § 18  TIMELINE / PILL CARDS
+   WHY: Priority indicators use left-border accent only —
+   no glowing halos, no pulsing. Calm, clinical, trustworthy.
+═══════════════════════════════════════════════ */
+.timeline { position: relative; }
+
+.pill-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 10px;
+  transition: border-color var(--dur-base);
+  position: relative;
+  overflow: hidden;
+}
+.pill-card:hover { border-color: var(--c-border2); }
+.pill-card.is-priority-critical { border-left: 3px solid var(--c-rose); }
+.pill-card.is-priority-high     { border-left: 3px solid var(--c-amber); }
+.pill-card.is-all-taken         { opacity: 0.42; }
+
+.pill-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.pill-color-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.pill-header-info { flex: 1; min-width: 0; }
+.pill-name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-lg);
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+.pill-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pill-meta {
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.pill-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
+.dose-rows { display: flex; flex-direction: column; gap: 6px; }
+
+.dose-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--c-surface2);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+}
+.dose-row.is-taken   { opacity: 0.38; }
+.dose-row.is-soon    { border-color: rgba(232,169,74,0.25); }
+.dose-row.is-now     { border-color: rgba(86,180,168,0.35); background: rgba(86,180,168,0.03); }
+.dose-row.is-chain   { border-color: rgba(232,169,74,0.38); background: rgba(232,169,74,0.03); }
+.dose-row.is-overdue { border-color: rgba(217,107,107,0.25); background: rgba(217,107,107,0.02); }
+
+.dose-time {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--c-text);
+  min-width: 50px;
+  font-family: var(--font-display);
+  font-style: italic;
+  flex-shrink: 0;
+}
+.dose-food {
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  background: var(--c-surface3);
+  border-radius: 6px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.dose-row-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+/* Take button — the MOST important touch target in the app */
+.take-btn {
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: 50%;
+  border: 2px solid var(--c-border2);
+  background: transparent;
+  color: var(--c-text3);
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur-base) var(--ease-spring);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+}
+.take-btn:hover { border-color: var(--c-sage); color: var(--c-sage); transform: scale(1.05); }
+.take-btn.taken {
+  background: var(--c-mint);
+  border-color: var(--c-mint);
+  color: #061a10;
+}
+.take-btn.taken:hover { background: var(--c-mint2); transform: scale(1.03); }
+.take-btn:active { transform: scale(0.93) !important; }
+
+/* Snooze button */
+.snooze-btn {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--c-border2);
+  background: var(--c-surface3);
+  color: var(--c-text3);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: all var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.snooze-btn:hover { border-color: var(--c-amber); color: var(--c-amber); }
+
+.pill-note {
+  margin-top: 8px;
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  padding: 0 2px;
+  line-height: 1.55;
+  font-style: italic;
+}
+
+.conflict-warning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--c-amber-dim);
+  border: 1px solid rgba(232,169,74,0.20);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  color: var(--c-amber);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ═══════════════════════════════════════════════
+   § 19  MISSED DOSE RECOVERY BANNER
+   WHY: Warm, compassionate tone. No red. No blame.
+   Emotionally validated "it's okay" messaging.
+═══════════════════════════════════════════════ */
+.missed-banner {
+  background: rgba(157,143,212,0.05);
+  border: 1px solid rgba(157,143,212,0.16);
+  border-radius: var(--r);
+  padding: 13px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.missed-banner.hidden { display: none; }
+.missed-banner-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.missed-banner-body { flex: 1; }
+.missed-banner-body strong { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--c-text); }
+.missed-banner-body p { font-size: var(--fs-xs); color: var(--c-text3); margin-top: 3px; line-height: 1.5; }
+.missed-banner-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════════
+   § 20  EMPTY STATE
+═══════════════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+}
+.empty-icon { font-size: 3rem; opacity: 0.18; margin-bottom: 14px; }
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--c-text2);
+  margin-bottom: 8px;
+}
+.empty-state p { font-size: var(--fs-sm); color: var(--c-text3); line-height: 1.75; }
+.empty-state .btn { margin-top: 20px; }
+
+/* ═══════════════════════════════════════════════
+   § 21  BOTTOM SHEET (Add/Edit medication)
+═══════════════════════════════════════════════ */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-slow);
+}
+.sheet-overlay.open { opacity: 1; pointer-events: all; cursor: pointer; }
+
+.sheet {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--c-bg2);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 0 18px calc(40px + env(safe-area-inset-bottom, 0px));
+  z-index: 201;
+  /* KEY FIX: max-height uses svh (small viewport height) — this is the viewport
+     height AFTER keyboard opens. Combined with interactive-widget=resizes-content
+     in meta viewport, the sheet shrinks correctly to fit above keyboard,
+     and overflow-y:auto lets user scroll through all fields. */
+  max-height: 90svh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translateY(100%);
+  transition: transform var(--dur-slow) cubic-bezier(0.32, 1.1, 0.64, 1);
+  max-width: 680px;
+  margin: 0 auto;
+  /* scroll-padding so focused input scrolls above handle */
+  scroll-padding-top: 56px;
+}
+.sheet.open { transform: translateY(0); }
+.sheet { touch-action: pan-y; }
+
+.sheet-handle {
+  width: 34px; height: 4px;
+  background: var(--c-border3);
+  border-radius: var(--r-pill);
+  margin: 14px auto 20px;
+  cursor: grab;
+  /* Larger touch/click area */
+  padding: 10px 30px;
+  box-sizing: content-box;
+  background-clip: content-box;
+}
+.sheet-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 400;
+  font-style: italic;
+  margin-bottom: 20px;
+  color: var(--c-text);
+}
+
+.form-section {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.form-section-title {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--c-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Advanced options collapse */
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--c-text3);
+  cursor: pointer;
+  padding: 10px 0;
+  user-select: none;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  width: 100%;
+  text-align: left;
+  transition: color var(--dur-fast);
+}
+.advanced-toggle:hover { color: var(--c-text2); }
+.advanced-toggle .arrow { transition: transform var(--dur-base); }
+.advanced-toggle.open .arrow { transform: rotate(180deg); }
+
+.advanced-body { display: none; padding-top: 4px; }
+.advanced-body.open { display: block; animation: pc-fadeUp var(--dur-base) var(--ease-out); }
+
+/* Color picker */
+.color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-dot {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  transition: transform var(--dur-fast), border-color var(--dur-fast);
+  flex-shrink: 0;
+}
+.color-dot:hover    { transform: scale(1.10); }
+.color-dot.selected { border-color: white; transform: scale(1.16);
+                      box-shadow: 0 0 0 3px rgba(255,255,255,0.12); }
+
+/* Dose preview */
+.dose-preview {
+  background: var(--c-sage-soft);
+  border: 1px solid rgba(86,180,168,0.14);
+  border-radius: var(--r-sm);
+  padding: 11px 13px;
+  font-size: var(--fs-sm);
+  color: var(--c-text3);
+  line-height: 1.7;
+  min-height: 42px;
+  margin-top: 6px;
+}
+.dose-preview .times { color: var(--c-sage); font-weight: 600; }
+
+.extra-fields { display: none; }
+.extra-fields.show { display: block; animation: pc-fadeUp 160ms var(--ease-out); }
+
+/* ═══════════════════════════════════════════════
+   § 22  CONFIRM MODAL
+═══════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.68);
+  /* FIX: reduced blur 8px→6px for performance */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--c-bg2);
+  border: 1px solid var(--c-border2);
+  border-radius: var(--r-lg);
+  padding: 28px 22px;
+  max-width: 340px;
+  width: 100%;
+  transform: scale(0.92) translateY(8px);
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+.modal-icon  { font-size: 2.2rem; margin-bottom: 12px; text-align: center; }
+.modal-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 400;
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.modal-body  { font-size: var(--fs-sm); color: var(--c-text2); text-align: center;
+               line-height: 1.65; margin-bottom: 22px; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions .btn { flex: 1; }
+
+/* ═══════════════════════════════════════════════
+   § 23  TOASTS
+   WHY: Toast bottom position must account for nav height
+   AND safe-area-inset. Formula: nav(56) + inset + gap.
+═══════════════════════════════════════════════ */
+.toast-wrap {
+  position: fixed;
+  /* Default: above nav. When undo is also showing, JS adds .above-undo class */
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  z-index: 500;
+  pointer-events: none;
+  transition: transform var(--dur-slow) var(--ease-spring), bottom var(--dur-slow) var(--ease);
+  max-width: calc(100vw - 32px);
+}
+.toast-wrap.show { transform: translateX(-50%) translateY(0); pointer-events: auto; }
+/* When undo bar is visible, nudge status toast higher so they don't stack */
+.toast-wrap.above-undo { bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 62px); }
+
+#pc-toast {
+  background: var(--c-surface3);
+  border: 1px solid var(--c-border3);
+  border-radius: var(--r-sm);
+  padding: 11px 18px;
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.undo-toast {
+  position: fixed;
+  /* Full-width bar that slides up flush above the bottom nav — no centering needed */
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  background: var(--c-bg2);
+  border-top: 1px solid var(--c-border3);
+  padding: 14px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 110;   /* above nav (100), below sheet (200) and modal (300) */
+  transform: translateY(100%);
+  transition: transform var(--dur-slow) var(--ease-spring);
+  box-shadow: 0 -3px 18px rgba(0,0,0,0.30);
+}
+/* On wider screens, constrain to app max-width and center it */
+@media (min-width: 712px) {
+  .undo-toast {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+    width: 680px;
+    border-radius: var(--r) var(--r) 0 0;
+    border-left: 1px solid var(--c-border3);
+    border-right: 1px solid var(--c-border3);
+  }
+  .undo-toast.show { transform: translateX(-50%) translateY(0); }
+}
+.undo-toast.show { transform: translateY(0); }
+/* Use visibility:hidden (not display:none) so CSS transition still works */
+.undo-toast.hidden { visibility: hidden; pointer-events: none; }
+.undo-msg  { flex: 1; font-size: var(--fs-sm); color: var(--c-text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.undo-btn {
+  color: var(--c-sage);
+  font-weight: 700;
+  background: none;
+  border: 1.5px solid var(--c-sage3);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  padding: 7px 16px;
+  letter-spacing: 0.3px;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.undo-btn:hover { background: var(--c-sage-dim); color: var(--c-sage); }
+
+/* ═══════════════════════════════════════════════
+   § 24  FAB
+   WHY: FAB bottom must clear nav + safe area. Using CSS calc
+   with env() is the only reliable cross-device solution.
+═══════════════════════════════════════════════ */
+.fab {
+  position: fixed;
+  bottom: calc(58px + env(safe-area-inset-bottom, 0px) + 14px);
+  right: 18px;
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--c-sage), var(--c-sage2));
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 1.55rem;
+  color: #061210;
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(86,180,168,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base);
+  -webkit-tap-highlight-color: transparent;
+  /* FIX: will-change for smoother GPU-composited animation */
+  will-change: transform;
+}
+.fab:hover  { transform: scale(1.06); box-shadow: 0 6px 28px rgba(86,180,168,0.45); }
+.fab:active { transform: scale(0.93); }
+
+/* ═══════════════════════════════════════════════
+   § 25  HISTORY
+═══════════════════════════════════════════════ */
+.history-filters {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.history-filters::-webkit-scrollbar { display: none; }
+
+.history-date-group { margin-bottom: 18px; }
+.history-date-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--c-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: 6px;
+}
+.history-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.history-entry:last-child { border-bottom: none; }
+.h-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.h-name  { flex: 1; font-size: var(--fs-md); font-weight: 500; min-width: 0;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-dose  { font-size: var(--fs-xs); color: var(--c-text3); flex-shrink: 0; }
+.h-time  { font-size: var(--fs-xs); color: var(--c-text3); font-family: var(--font-display);
+           font-style: italic; flex-shrink: 0; }
+.h-status { font-size: var(--fs-xs); padding: 2px 9px; border-radius: var(--r-pill); font-weight: 600; flex-shrink: 0; }
+.h-taken  { background: var(--c-mint-dim); color: var(--c-mint); }
+.h-missed { background: var(--c-rose-dim); color: var(--c-rose); }
+
+/* Week chart */
+.week-chart {
+  display: flex;
+  gap: 5px;
+  align-items: flex-end;
+  height: 60px;
+  margin: 12px 0 6px;
+}
+.week-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.week-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.7s var(--ease);
+  min-height: 4px;
+}
+.week-bar.good    { background: linear-gradient(180deg, var(--c-sage), var(--c-sage2)); }
+.week-bar.partial { background: linear-gradient(180deg, var(--c-amber), var(--c-amber2)); }
+.week-bar.none    { background: var(--c-surface3); }
+.week-day-lbl     { font-size: var(--fs-2xs); color: var(--c-text3); font-weight: 600; }
+.week-pct         { font-size: 0.58rem; color: var(--c-text3); }
+
+/* History load-more */
+.load-more-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  color: var(--c-text3);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  margin-top: 8px;
+  transition: all var(--dur-fast);
+}
+.load-more-btn:hover { color: var(--c-sage); border-color: var(--c-sage); }
+
+/* ═══════════════════════════════════════════════
+   § 26  SETTINGS
+═══════════════════════════════════════════════ */
+.settings-group { margin-bottom: 24px; }
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-border);
+  gap: 14px;
+  min-height: var(--touch);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-info { flex: 1; }
+.setting-label { font-size: var(--fs-md); font-weight: 500; color: var(--c-text); }
+.setting-desc  { font-size: var(--fs-xs); color: var(--c-text3); margin-top: 2px; line-height: 1.4; }
+
+.toggle {
+  width: 48px; height: 26px;
+  background: var(--c-surface3);
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background var(--dur-base);
+  flex-shrink: 0;
+}
+.toggle::after {
+  content: '';
+  width: 20px; height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: transform var(--dur-base) var(--ease-spring);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle.on { background: var(--c-sage); }
+.toggle.on::after { transform: translateX(22px); }
+
+/* Diagnostics rows */
+.diag-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+  gap: 10px;
+}
+.diag-row:last-child { border-bottom: none; }
+.diag-key { color: var(--c-text3); }
+.diag-val { font-weight: 600; font-family: var(--font-display); text-align: right; font-style: italic; }
+.diag-ok   { color: var(--c-mint); }
+.diag-warn { color: var(--c-amber); }
+.diag-err  { color: var(--c-rose); }
+
+/* Notification health card */
+.notif-health-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.notif-health-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--c-text2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.health-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.health-ok   { color: var(--c-mint);  background: var(--c-mint); }
+.health-warn { color: var(--c-amber); background: var(--c-amber); }
+.health-bad  { color: var(--c-rose);  background: var(--c-rose); }
+
+/* ═══════════════════════════════════════════════
+   § 27  MEDS MANAGEMENT LIST
+═══════════════════════════════════════════════ */
+.archived-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  margin: 18px 0 10px;
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  width: 100%;
+  text-align: left;
+}
+.archived-toggle-btn::after { content: ''; flex: 1; height: 1px; background: var(--c-border); margin-left: 4px; }
+
+/* ═══════════════════════════════════════════════
+   § 28  ONBOARDING
+   WHY: First impression must be warm and reassuring.
+   Trust is built in the first 10 seconds.
+═══════════════════════════════════════════════ */
+.onboarding {
+  position: fixed;
+  inset: 0;
+  background: var(--c-bg);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+  overflow-y: auto;
+}
+.onboarding.hidden { display: none; }
+.onboarding-logo {
+  font-size: 4rem;
+  margin-bottom: 18px;
+  animation: pc-scaleIn 0.5s var(--ease-spring) both;
+}
+.onboarding-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--c-text);
+  margin-bottom: 10px;
+  line-height: 1.15;
+  max-width: 320px;
+}
+.onboarding-sub {
+  font-size: var(--fs-md);
+  color: var(--c-text2);
+  line-height: 1.75;
+  margin-bottom: 34px;
+  max-width: 320px;
+}
+.onboarding-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 350px;
+  margin-bottom: 32px;
+  text-align: left;
+}
+.onboarding-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  animation: pc-slideIn 0.4s var(--ease-out) both;
+}
+.onboarding-step:nth-child(1) { animation-delay: 0.08s; }
+.onboarding-step:nth-child(2) { animation-delay: 0.16s; }
+.onboarding-step:nth-child(3) { animation-delay: 0.24s; }
+.step-icon { font-size: 1.5rem; flex-shrink: 0; }
+.step-text strong { display: block; font-size: var(--fs-md); font-weight: 500; color: var(--c-text); margin-bottom: 1px; }
+.step-text span   { font-size: var(--fs-xs); color: var(--c-text3); line-height: 1.4; }
+
+/* ═══════════════════════════════════════════════
+   § 29  SW STATUS + AUTOSAVE INDICATORS
+   WHY: Trust indicators must always be visible in settings.
+   They must feel reassuring, not alarming.
+═══════════════════════════════════════════════ */
+.sw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  transition: all 0.3s;
+}
+.sw-badge.ok   { background: var(--c-mint-dim);  color: var(--c-mint);  border: 1px solid rgba(98,201,154,0.18); }
+.sw-badge.warn { background: var(--c-amber-dim); color: var(--c-amber); border: 1px solid rgba(232,169,74,0.18); }
+.sw-badge.err  { background: var(--c-rose-dim);  color: var(--c-rose);  border: 1px solid rgba(217,107,107,0.18); }
+.sw-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pc-pulse 2.4s infinite;
+  flex-shrink: 0;
+}
+
+.autosave-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-mint);
+  opacity: 0;
+  transition: opacity 0.4s;
+  flex-shrink: 0;
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.autosave-dot.visible { opacity: 1; }
+
+/* ═══════════════════════════════════════════════
+   § 30  FOCUS & ACCESSIBILITY
+   WHY: WCAG 2.4.7 — Focus must be visible at all times.
+   2px solid with 3px offset creates clear, universally
+   visible focus rings on any background colour.
+═══════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--c-sage);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+/* FIX: AT compatibility — :focus fallback for assistive technology that doesn't honour :focus-visible */
+:focus:not(:focus-visible) {
+  outline: 2px solid var(--c-sage);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* FIX: Screen-reader live announcer — for programmatic announcements */
+.sr-announcer {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  background: var(--c-sage);
+  color: #061210;
+  padding: 8px 16px;
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  z-index: 9999;
+  transition: top 0.1s;
+  text-decoration: none;
+}
+.skip-link:focus { top: 0; }
+
+/* ═══════════════════════════════════════════════
+   § 31  ANIMATIONS
+   WHY: All animations respect prefers-reduced-motion.
+   Healthcare users include those with vestibular disorders.
+   Animations also respect the in-app toggle.
+═══════════════════════════════════════════════ */
+@keyframes pc-fadeUp   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes pc-fadeDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+@keyframes pc-slideIn  { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:none; } }
+@keyframes pc-scaleIn  { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }
+@keyframes pc-pulse    { 0%,100% { opacity:1; } 50% { opacity:0.28; } }
+@keyframes pc-takePop  { 0% { transform:scale(1); } 40% { transform:scale(1.18); } 100% { transform:scale(1); } }
+
+/* OS-level reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* In-app reduced motion toggle */
+body.pc-reduced-motion *,
+body.pc-reduced-motion *::before,
+body.pc-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* ═══════════════════════════════════════════════
+   § 32  UTILITIES
+═══════════════════════════════════════════════ */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+.hidden { display: none !important; }
+.spacer-sm { height: 8px; }
+.spacer-md { height: 16px; }
+.spacer-lg { height: 24px; }
+
+/* ═══════════════════════════════════════════════
+   TODAY TIMELINE — Chronological dose view
+   WHY: Linear time flow is more intuitive than
+   a flat card list. Users can see past/present/future
+   at a glance. Reduces cognitive load significantly.
+═══════════════════════════════════════════════ */
+.timeline-list { padding-bottom: 8px; }
+
+.tl-hour-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  color: var(--c-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 20px 0 8px;
+}
+.tl-hour-label:first-child { margin-top: 4px; }
+.tl-now-pill {
+  display: inline-flex;
+  align-items: center;
+  background: var(--c-sage-dim);
+  color: var(--c-sage);
+  border: 1px solid var(--c-sage);
+  border-radius: var(--r-pill);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  letter-spacing: 0.6px;
+}
+
+.tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 8px;
+  transition: opacity var(--dur-base);
+}
+.tl-item.tl-done { opacity: 0.38; }
+
+.tl-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  min-width: 72px;
+  padding-top: 13px;
+  flex-shrink: 0;
+}
+.tl-time {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-style: italic;
+  color: var(--c-text3);
+  font-weight: 400;
+  line-height: 1;
+  margin-bottom: 4px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Timeline track — dot + vertical line */
+.tl-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+.tl-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--c-border3);
+  background: var(--c-bg);
+  flex-shrink: 0;
+  transition: all var(--dur-base);
+}
+.tl-dot-done  { border-width: 0; }
+.tl-dot-soon  { border-color: var(--c-amber); box-shadow: 0 0 0 3px var(--c-amber-dim); }
+.tl-dot-over  { border-color: var(--c-rose); }
+
+.tl-line {
+  width: 1px;
+  flex: 1;
+  min-height: 8px;
+  background: var(--c-border);
+  margin-top: 3px;
+}
+
+/* Timeline card */
+.tl-card {
+  flex: 1;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-left: 10px;
+  transition: border-color var(--dur-base);
+  min-width: 0;
+}
+.tl-item.is-now    .tl-card { border-color: rgba(86,180,168,0.32); background: rgba(86,180,168,0.03); }
+.tl-item.is-soon   .tl-card { border-color: rgba(232,169,74,0.25); }
+.tl-item.is-overdue .tl-card { border-color: rgba(217,107,107,0.22); }
+.tl-item.is-chain  .tl-card { border-color: rgba(232,169,74,0.30); }
+.tl-item.tl-critical .tl-card { border-left: 3px solid var(--c-rose); }
+.tl-item.tl-high     .tl-card { border-left: 3px solid var(--c-amber); }
+
+.tl-card-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.tl-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 400;
+  color: var(--c-text);
+  line-height: 1.2;
+}
+.tl-dose {
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.tl-food {
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  background: var(--c-surface3);
+  border-radius: 5px;
+  padding: 1px 6px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.tl-note {
+  font-size: var(--fs-xs);
+  color: var(--c-text3);
+  font-style: italic;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+.tl-priority-badge {
+  font-size: var(--fs-xs);
+  color: var(--c-amber);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.tl-conflict {
+  font-size: var(--fs-xs);
+  color: var(--c-amber);
+  margin-bottom: 6px;
+}
+.tl-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* Edit button sits to the right of the card */
+.tl-edit-btn {
+  padding-top: 12px;
+  padding-left: 6px;
+  flex-shrink: 0;
+}
+.btn-icon-sm {
+  width: 36px; height: 36px; min-width: 36px;
+  font-size: 0.85rem;
+}
+
+/* ── Reduce animation for .pc-reduced-motion ── */
+body.pc-reduced-motion .tl-dot,
+body.pc-reduced-motion .tl-card { transition: none !important; }
+
+/* FIX: contain timeline rows — limits repaint area on long lists */
+.tl-item { contain: layout style; }
+</style>
+</head>
+
+<body>
+
+<!-- FIX: Screen-reader live announcer for dynamic content changes -->
+<div id="pc-sr-announcer" class="sr-announcer" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- Skip to main content — keyboard & screen reader accessibility -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- ═══════════ ONBOARDING ═══════════
+     WHY: Shown only on first visit. Warm, trust-building
+     tone. Privacy assurance front-and-center.
+══════════════════════════════════ -->
+<div class="onboarding hidden" id="pc-onboarding"
+     role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+  <div class="onboarding-logo" aria-hidden="true">💊</div>
+  <h1 class="onboarding-title" id="onboarding-title">Welcome to PillCare</h1>
+  <p class="onboarding-sub">A calm, trusted companion for your daily medications. Simple, private, always with you.</p>
+
+  <div class="onboarding-steps" role="list">
+    <div class="onboarding-step" role="listitem">
+      <div class="step-icon" aria-hidden="true">💊</div>
+      <div class="step-text">
+        <strong>Add your medications</strong>
+        <span>Once-daily, multiple times, weekly or monthly — any schedule works</span>
+      </div>
+    </div>
+    <div class="onboarding-step" role="listitem">
+      <div class="step-icon" aria-hidden="true">🔔</div>
+      <div class="step-text">
+        <strong>Gentle reminders</strong>
+        <span>Get notified at the right time, and again if you need a moment</span>
+      </div>
+    </div>
+    <div class="onboarding-step" role="listitem">
+      <div class="step-icon" aria-hidden="true">🔒</div>
+      <div class="step-text">
+        <strong>Completely private</strong>
+        <span>Everything stays on your device — nothing is ever shared</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary"
+          style="max-width:320px;width:100%;font-size:var(--fs-lg);height:54px;border-radius:14px;"
+          id="btn-finish-onboarding">
+    Get started
+  </button>
+  <p style="margin-top:14px;font-size:var(--fs-xs);color:var(--c-text3);">
+    Your health data stays on your device only.
+  </p>
+</div>
+
+<!-- ═══════════ MAIN APP ═══════════ -->
+<div class="app-shell" id="main-content">
+
+  <!-- ── TODAY PAGE ── -->
+  <section class="page active" id="page-today"
+           aria-label="Today's medications">
+
+    <div class="today-header">
+      <div>
+        <div class="today-greeting" id="pc-greeting" aria-live="off">Good morning</div>
+        <div class="today-date" id="pc-today-date" aria-live="off" role="heading" aria-level="1"></div>
+      </div>
+      <div class="clock-display" id="pc-clock"
+           aria-label="Current time" aria-live="off">--:--</div>
+    </div>
+
+    <!-- Update available banner -->
+    <div class="pc-banner banner-update hidden" id="pc-update-banner"
+         role="button" tabindex="0"
+         aria-label="App update available — tap to refresh">
+      <div class="pc-banner-icon" aria-hidden="true">🔄</div>
+      <div class="pc-banner-body">
+        <strong>Update ready</strong>
+        <small>A newer version is available — tap to refresh</small>
+      </div>
+    </div>
+
+    <!-- Notification permission banner -->
+    <div class="pc-banner banner-notif hidden" id="pc-notif-banner"
+         role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="pc-banner-icon" aria-hidden="true">🔔</div>
+      <div class="pc-banner-body">
+        <strong>Enable reminders</strong>
+        <small>Allow notifications so you never miss a dose</small>
+      </div>
+      <button class="btn btn-primary"
+              style="padding:0 14px;font-size:var(--fs-xs);height:36px;border-radius:7px;flex-shrink:0;"
+              id="btn-enable-notif" aria-label="Enable notifications">Allow</button>
+      <button class="btn-icon"
+              style="width:32px;height:32px;min-width:32px;font-size:0.8rem;flex-shrink:0;"
+              id="btn-dismiss-notif" aria-label="Dismiss notification prompt">✕</button>
+    </div>
+
+    <!-- Install banner -->
+    <div class="pc-banner banner-install hidden" id="pc-install-banner">
+      <div class="pc-banner-icon" aria-hidden="true">📲</div>
+      <div class="pc-banner-body">
+        <strong>Add to home screen</strong>
+        <small>Works offline and feels like a native app</small>
+      </div>
+      <button class="btn btn-ghost"
+              style="padding:0 12px;font-size:var(--fs-xs);height:34px;border-radius:7px;flex-shrink:0;"
+              id="btn-install">Install</button>
+      <button class="btn-icon"
+              style="width:32px;height:32px;min-width:32px;font-size:0.8rem;flex-shrink:0;"
+              id="btn-dismiss-install" aria-label="Dismiss install prompt">✕</button>
+    </div>
+
+    <!-- Gentle important medication reminder (replaces harsh critical-alert) -->
+    <div class="gentle-alert hidden" id="pc-critical-alert" role="alert" aria-live="polite">
+      <div class="gentle-alert-icon" aria-hidden="true">💛</div>
+      <div class="gentle-alert-text">
+        <strong id="pc-critical-text">Important medication due</strong>
+        <span>Please take when you're ready — no rush</span>
+      </div>
+    </div>
+
+    <!-- Missed dose recovery banner — compassionate tone -->
+    <div class="missed-banner hidden" id="pc-missed-banner" role="status" aria-live="polite">
+      <div class="missed-banner-icon" aria-hidden="true">💛</div>
+      <div class="missed-banner-body">
+        <strong id="pc-missed-title">A few doses were missed yesterday</strong>
+        <p id="pc-missed-text">That's okay. Just continue as normal today — every dose counts.</p>
+        <div class="missed-banner-actions" id="pc-missed-actions"></div>
+      </div>
+    </div>
+
+    <!-- Adherence progress bar -->
+    <div class="adherence-card hidden" id="pc-adherence-wrap">
+      <div class="adherence-head">
+        <span class="adherence-label">Today's progress</span>
+        <span class="adherence-pct" id="pc-adherence-pct">–</span>
+      </div>
+      <div class="adherence-track"
+           role="progressbar"
+           aria-valuemin="0" aria-valuemax="100"
+           aria-label="Today's adherence progress"
+           id="pc-adherence-bar">
+        <div class="adherence-fill" id="pc-adherence-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stats-row" aria-label="Today at a glance">
+      <div class="stat-card" role="status" aria-label="Doses taken today">
+        <div class="stat-num" id="pc-stat-taken">0</div>
+        <div class="stat-label">Taken</div>
+      </div>
+      <div class="stat-card" role="status" aria-label="Doses remaining today" id="pc-stat-due-card">
+        <div class="stat-num" id="pc-stat-due">0</div>
+        <div class="stat-label" id="pc-stat-due-label">Remaining</div>
+      </div>
+      <div class="stat-card" role="status" aria-label="Current day streak">
+        <div class="stat-num" id="pc-stat-streak">0</div>
+        <div class="stat-label">Day streak</div>
+      </div>
+    </div>
+
+    <!-- Medication timeline list -->
+    <div class="timeline" id="pc-pill-list" aria-label="Today's medication schedule"></div>
+
+  </section>
+
+  <!-- ── MEDICATIONS PAGE ── -->
+  <section class="page" id="page-meds" aria-label="All medications">
+    <div class="page-header">
+      <h1 class="page-title">Medications</h1>
+      <p class="page-sub" id="pc-meds-count">Loading…</p>
+    </div>
+    <div id="pc-meds-list"></div>
+  </section>
+
+  <!-- ── HISTORY PAGE ── -->
+  <section class="page" id="page-history" aria-label="Medication history">
+    <div class="page-header">
+      <h1 class="page-title">History</h1>
+      <p class="page-sub">Your adherence log</p>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:var(--fs-sm);color:var(--c-text2);font-weight:500">Past 7 days</span>
+        <span id="pc-week-pct" style="font-family:var(--font-display);font-size:var(--fs-xl);font-weight:400;font-style:italic;color:var(--c-sage)">–</span>
+      </div>
+      <div class="week-chart" id="pc-week-chart"
+           role="img" aria-label="7-day adherence bar chart"></div>
+    </div>
+
+    <div class="history-filters" role="group" aria-label="Filter history">
+      <button class="chip active" data-filter="all"    aria-pressed="true">All</button>
+      <button class="chip"        data-filter="taken"  aria-pressed="false">✓ Taken</button>
+      <button class="chip"        data-filter="missed" aria-pressed="false">✕ Missed</button>
+    </div>
+
+    <div id="pc-history-list" aria-live="polite"></div>
+  </section>
+
+  <!-- ── SETTINGS PAGE ── -->
+  <section class="page" id="page-settings" aria-label="Settings">
+    <div class="page-header">
+      <h1 class="page-title">Settings</h1>
+      <p class="page-sub">Preferences &amp; your data</p>
+    </div>
+
+    <!-- Reminder health / trust panel -->
+    <div class="notif-health-card">
+      <div class="notif-health-title">
+        <span class="health-dot" id="pc-health-dot" aria-hidden="true"></span>
+        Reminder system
+      </div>
+      <div id="pc-sw-status" class="sw-badge warn" role="status" style="margin-bottom:10px">
+        <span class="sw-dot" aria-hidden="true"></span> Setting up…
+      </div>
+      <div class="diag-row"><span class="diag-key">Notifications</span><span class="diag-val" id="diag-notif">–</span></div>
+      <div class="diag-row"><span class="diag-key">Last reminder sent</span><span class="diag-val" id="diag-last">–</span></div>
+      <div class="diag-row"><span class="diag-key">Next reminder</span><span class="diag-val" id="diag-next">–</span></div>
+      <div class="diag-row"><span class="diag-key">Active follow-ups</span><span class="diag-val" id="diag-chains">–</span></div>
+      <div class="diag-row"><span class="diag-key">Snoozed doses</span><span class="diag-val" id="diag-snooze">–</span></div>
+      <div class="diag-row"><span class="diag-key">Storage used</span><span class="diag-val" id="diag-storage">–</span></div>
+      <div class="diag-row"><span class="diag-key">Installed as app</span><span class="diag-val" id="diag-pwa">–</span></div>
+      <div class="spacer-sm"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="flex:1;font-size:var(--fs-xs);height:36px;"
+                id="btn-test-notif">🔔 Test reminder</button>
+        <button class="btn btn-ghost" style="flex:1;font-size:var(--fs-xs);height:36px;"
+                id="btn-req-notif">Enable</button>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="section-label no-line" style="margin-top:0">Accessibility</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Easier reading mode</div>
+            <div class="setting-desc">Larger text and bigger touch targets</div>
+          </div>
+          <button class="toggle" id="toggle-elderly"
+                  data-setting="elderly"
+                  role="switch" aria-label="Toggle easier reading mode"
+                  aria-checked="false"></button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Reduce animations</div>
+            <div class="setting-desc">Calmer experience with less motion</div>
+          </div>
+          <button class="toggle" id="toggle-motion"
+                  data-setting="reducedMotion"
+                  role="switch" aria-label="Toggle reduced motion"
+                  aria-checked="false"></button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">High contrast</div>
+            <div class="setting-desc">Stronger borders and higher contrast colors</div>
+          </div>
+          <button class="toggle" id="toggle-hc"
+                  data-setting="highContrast"
+                  role="switch" aria-label="Toggle high contrast"
+                  aria-checked="false"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="section-label no-line">Your data</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Export backup <span class="autosave-dot" aria-hidden="true"></span></div>
+            <div class="setting-desc">Save all medications &amp; history as a file</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:0 14px;font-size:var(--fs-xs);height:36px;"
+                  id="btn-export">Export</button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Restore from backup</div>
+            <div class="setting-desc">Import a previously saved backup file</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:0 14px;font-size:var(--fs-xs);height:36px;"
+                  id="btn-import">Import</button>
+          <input type="file" id="pc-import-file" accept=".json"
+                 style="display:none" aria-label="Import backup file">
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Clear all data</div>
+            <div class="setting-desc">Permanently remove all medications and history</div>
+          </div>
+          <button class="btn btn-danger" style="padding:0 14px;font-size:var(--fs-xs);height:36px;"
+                  id="btn-clear-all">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="section-label no-line">About</div>
+      <div class="card">
+        <div class="diag-row">
+          <span class="diag-key">PillCare</span>
+          <span class="diag-val" style="color:var(--c-text2)" id="pc-version-display">v12.0 · Local-first</span>
+        </div>
+        <div class="diag-row">
+          <span class="diag-key">Privacy</span>
+          <span class="diag-val" style="color:var(--c-mint)">100% on your device</span>
+        </div>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--c-text3);text-align:center;margin-top:10px;line-height:1.65;">
+        PillCare stores everything locally.<br>Nothing is ever sent anywhere.
+      </p>
+    </div>
+  </section>
+
+</div><!-- /app-shell -->
+
+<!-- ── BOTTOM NAV ── -->
+<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+  <button class="nav-btn active" id="nav-today"
+          data-page="today" aria-label="Today's medications" aria-current="page">
+    <span class="nav-icon" aria-hidden="true">🏠</span>
+    Today
+  </button>
+  <button class="nav-btn" id="nav-meds"
+          data-page="meds" aria-label="Manage medications">
+    <span class="nav-icon" aria-hidden="true">💊</span>
+    Meds
+  </button>
+  <button class="nav-btn" id="nav-history"
+          data-page="history" aria-label="Medication history">
+    <span class="nav-icon" aria-hidden="true">📊</span>
+    History
+  </button>
+  <button class="nav-btn" id="nav-settings"
+          data-page="settings" aria-label="Settings">
+    <span class="nav-icon" aria-hidden="true">⚙️</span>
+    Settings
+  </button>
+</nav>
+
+<!-- ── FAB (Add medication) ── -->
+<button class="fab" id="btn-add-med" aria-label="Add new medication">＋</button>
+
+<!-- ── ADD / EDIT SHEET ── -->
+<div class="sheet-overlay" id="pc-sheet-overlay" aria-hidden="true"></div>
+<div class="sheet" id="pc-sheet" role="dialog" aria-modal="true"
+     aria-labelledby="sheet-title" tabindex="-1">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <div class="sheet-title" id="sheet-title">Add medication</div>
+
+  <!-- SECTION 1 — Essentials -->
+  <div class="form-section">
+    <div class="form-section-title">💊 Medication details</div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="f-name">Name <span aria-hidden="true">*</span></label>
+        <input type="text" id="f-name" placeholder="e.g. Metformin"
+               maxlength="50" autocomplete="off" autocorrect="off" spellcheck="false"
+               aria-required="true">
+      </div>
+      <div class="field">
+        <label for="f-dose">Dosage</label>
+        <input type="text" id="f-dose" placeholder="e.g. 500mg" maxlength="24">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="f-category">Category</label>
+        <select id="f-category" aria-label="Medication category">
+          <option value="general">💊 General</option>
+          <option value="heart">❤️ Heart / BP</option>
+          <option value="diabetes">🩸 Diabetes</option>
+          <option value="pain">🩹 Pain relief</option>
+          <option value="vitamin">🌿 Vitamins</option>
+          <option value="mental">🧠 Mental health</option>
+          <option value="antibiotic">🦠 Antibiotic</option>
+          <option value="other">📦 Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-priority">Importance</label>
+        <select id="f-priority" aria-label="Medication priority">
+          <option value="normal">Normal</option>
+          <option value="high">⬆ High</option>
+          <option value="critical">⚠️ Critical</option>
+          <option value="low">⬇ Low</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 — Schedule -->
+  <div class="form-section">
+    <div class="form-section-title">🗓 Schedule</div>
+
+    <div class="field">
+      <label for="f-freq">How often?</label>
+      <select id="f-freq" aria-label="Frequency">
+        <option value="once">Once daily</option>
+        <option value="custom">Multiple times a day</option>
+        <option value="weekly">Specific days of the week</option>
+        <option value="monthly">Once a month</option>
+      </select>
+    </div>
+
+    <!-- ONCE DAILY -->
+    <div id="field-once" class="extra-fields show">
+      <div class="field">
+        <label for="f-time-once">Reminder time <span aria-hidden="true">*</span></label>
+        <input type="time" id="f-time-once" aria-required="true">
+      </div>
+      <div class="field">
+        <label>Quick times</label>
+        <div class="chips" role="group" aria-label="Quick time presets">
+          <button type="button" class="chip time-preset-chip" data-preset="f-time-once:07:30">🌅 Morning</button>
+          <button type="button" class="chip time-preset-chip" data-preset="f-time-once:13:00">☀️ Midday</button>
+          <button type="button" class="chip time-preset-chip" data-preset="f-time-once:19:00">🌆 Evening</button>
+          <button type="button" class="chip time-preset-chip" data-preset="f-time-once:21:00">🌙 Night</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOM (interval-based) -->
+    <div id="field-custom" class="extra-fields">
+      <div class="field">
+        <label for="f-time-custom">First dose time <span aria-hidden="true">*</span></label>
+        <input type="time" id="f-time-custom" aria-required="true"
+               aria-describedby="custom-time-hint">
+        <span class="hint" id="custom-time-hint">When do you take the first dose each day?</span>
+      </div>
+      <div class="field">
+        <label for="f-interval-hrs">Repeat every <span aria-hidden="true">*</span></label>
+        <select id="f-interval-hrs" aria-required="true" aria-describedby="interval-hint">
+          <option value="">Choose interval…</option>
+          <option value="0.25">15 minutes</option>
+          <option value="0.5">30 minutes</option>
+          <option value="1">1 hour</option>
+          <option value="2">2 hours</option>
+          <option value="3">3 hours</option>
+          <option value="4">4 hours</option>
+          <option value="5">5 hours</option>
+          <option value="6">6 hours</option>
+          <option value="7">7 hours</option>
+          <option value="8">8 hours</option>
+          <option value="9">9 hours</option>
+          <option value="10">10 hours</option>
+          <option value="11">11 hours</option>
+          <option value="12">12 hours</option>
+        </select>
+        <span class="hint good" id="interval-hint" aria-live="polite" role="status"></span>
+      </div>
+      <div class="field">
+        <label>Quick presets</label>
+        <div class="chips" role="group" aria-label="Interval presets">
+          <button type="button" class="chip" data-custom-preset="08:00:4">Every 4h</button>
+          <button type="button" class="chip" data-custom-preset="08:00:6">Every 6h</button>
+          <button type="button" class="chip" data-custom-preset="08:00:8">Every 8h</button>
+          <button type="button" class="chip" data-custom-preset="08:00:12">Every 12h</button>
+        </div>
+      </div>
+      <div class="dose-preview" id="dose-preview" aria-live="polite" role="status">
+        Set first dose time and interval to preview your schedule
+      </div>
+    </div>
+
+    <!-- WEEKLY -->
+    <div id="field-weekly" class="extra-fields">
+      <div class="field">
+        <label>Which days? <span aria-hidden="true">*</span></label>
+        <div class="chips" id="weekday-picker" style="gap:6px"
+             role="group" aria-label="Select days of the week">
+          <button type="button" class="day-chip" data-day="0" aria-pressed="false">Su</button>
+          <button type="button" class="day-chip" data-day="1" aria-pressed="false">Mo</button>
+          <button type="button" class="day-chip" data-day="2" aria-pressed="false">Tu</button>
+          <button type="button" class="day-chip" data-day="3" aria-pressed="false">We</button>
+          <button type="button" class="day-chip" data-day="4" aria-pressed="false">Th</button>
+          <button type="button" class="day-chip" data-day="5" aria-pressed="false">Fr</button>
+          <button type="button" class="day-chip" data-day="6" aria-pressed="false">Sa</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-time-weekly">Reminder time <span aria-hidden="true">*</span></label>
+        <input type="time" id="f-time-weekly" aria-required="true">
+      </div>
+    </div>
+
+    <!-- MONTHLY -->
+    <div id="field-monthly" class="extra-fields">
+      <div class="form-row">
+        <div class="field">
+          <label for="f-month-day">Day of month <span aria-hidden="true">*</span></label>
+          <select id="f-month-day" aria-required="true">
+            <option value="">Choose day…</option>
+          </select>
+          <span class="hint warn hidden" id="monthly-day-warn" aria-live="polite">
+            ⚠ Some months don't have this day — the dose will be skipped
+          </span>
+        </div>
+        <div class="field">
+          <label for="f-time-monthly">Reminder time <span aria-hidden="true">*</span></label>
+          <input type="time" id="f-time-monthly" aria-required="true">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 — Advanced (collapsed by default)
+       WHY: Progressive disclosure — most users don't need
+       food timing or notes. Hiding them reduces cognitive load.
+  -->
+  <button type="button" class="advanced-toggle" id="advanced-toggle"
+          aria-expanded="false" aria-controls="advanced-body">
+    <span>More options</span>
+    <span class="arrow" aria-hidden="true">⌃</span>
+  </button>
+  <div id="advanced-body" class="advanced-body"
+       role="region" aria-label="Advanced options">
+    <div class="form-section" style="margin-top:0">
+
+      <div class="field">
+        <label>Food timing</label>
+        <div class="chips" id="food-chips"
+             role="group" aria-label="When to take relative to food">
+          <button type="button" class="chip active" data-food="any">Any time</button>
+          <button type="button" class="chip" data-food="before">Before food</button>
+          <button type="button" class="chip" data-food="after">After food</button>
+          <button type="button" class="chip" data-food="empty">Empty stomach</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-notes">Notes (optional)</label>
+        <textarea id="f-notes" placeholder="e.g. Take with a full glass of water" rows="2"
+                  maxlength="200"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Colour label</label>
+        <div class="color-picker" id="color-picker"
+             role="radiogroup" aria-label="Choose a colour for this medication">
+          <div class="color-dot selected" style="background:#56b4a8" data-color="#56b4a8"
+               role="radio" aria-label="Teal" aria-checked="true" tabindex="0"></div>
+          <div class="color-dot" style="background:#e8a94a" data-color="#e8a94a"
+               role="radio" aria-label="Amber" aria-checked="false" tabindex="0"></div>
+          <div class="color-dot" style="background:#d96b6b" data-color="#d96b6b"
+               role="radio" aria-label="Rose" aria-checked="false" tabindex="0"></div>
+          <div class="color-dot" style="background:#68a8d8" data-color="#68a8d8"
+               role="radio" aria-label="Sky blue" aria-checked="false" tabindex="0"></div>
+          <div class="color-dot" style="background:#9d8fd4" data-color="#9d8fd4"
+               role="radio" aria-label="Lavender" aria-checked="false" tabindex="0"></div>
+          <div class="color-dot" style="background:#62c99a" data-color="#62c99a"
+               role="radio" aria-label="Mint" aria-checked="false" tabindex="0"></div>
+          <div class="color-dot" style="background:#f48fb0" data-color="#f48fb0"
+               role="radio" aria-label="Pink" aria-checked="false" tabindex="0"></div>
+        </div>
+      </div>
+
+      <!-- Archive toggle (edit mode only) -->
+      <div id="archive-row" class="field hidden">
+        <label>Status</label>
+        <div class="chips" role="group" aria-label="Medication active status">
+          <button type="button" class="chip active" id="chip-active"   data-archive="false">✓ Active</button>
+          <button type="button" class="chip"        id="chip-archived" data-archive="true">📦 Archived</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Duplicate name warning — shown inline, not as toast -->
+  <div id="duplicate-warning" class="conflict-warning hidden"
+       role="alert" aria-live="polite">
+    ⚠️ <span>A medication with this name already exists</span>
+  </div>
+
+  <div class="spacer-sm"></div>
+  <div style="display:flex;gap:10px;padding-bottom:6px">
+    <button class="btn btn-ghost" style="width:88px;flex-shrink:0;"
+            id="btn-cancel-sheet">Cancel</button>
+    <button class="btn btn-primary btn-full" id="btn-save-pill">Add medication</button>
+  </div>
+</div>
+
+<!-- ── CONFIRM MODAL ── -->
+<div class="modal-overlay" id="pc-modal"
+     role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <div class="modal-icon"  id="modal-icon"  aria-hidden="true">⚠️</div>
+    <div class="modal-title" id="modal-title">Are you sure?</div>
+    <div class="modal-body"  id="modal-body">This cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btn-modal-cancel">Cancel</button>
+      <button class="btn"           id="btn-modal-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── UNDO TOAST ── -->
+<div class="undo-toast hidden" id="pc-undo-toast" role="status" aria-live="polite">
+  <span class="undo-msg" id="pc-undo-msg">Medication removed</span>
+  <button class="undo-btn" id="btn-undo" aria-label="Undo delete">UNDO</button>
+</div>
+
+<!-- ── STATUS TOAST ── -->
+<div class="toast-wrap" id="pc-toast-wrap"
+     role="status" aria-live="polite" aria-atomic="true">
+  <div id="pc-toast"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT — Production-grade, modular, event-delegation
+     Architecture: Constants → Utils → Store → State →
+     Persist → Schedule → Chains → Notif → Reminders →
+     Diagnostics → Render → Actions → Settings → UI →
+     Form → SW → Events → Init
+══════════════════════════════════════════════════════ -->
+
+<script>
+'use strict';
+
+/* ── constants ── */
+
+const APP_VERSION  = 'v12.0';
+const SCHEMA_VER   = 12;
+const CHAIN_HOURS  = 1;
+const HISTORY_DAYS = 90;
+const HISTORY_PAGE = 30;
+
+const COLORS = ['#56b4a8','#e8a94a','#d96b6b','#68a8d8','#9d8fd4','#62c99a','#f48fb0'];
+
+const CAT_ICONS = {
+  general:'💊', heart:'❤️', diabetes:'🩸', pain:'🩹',
+  vitamin:'🌿', mental:'🧠', antibiotic:'🦠', other:'📦'
+};
+const FOOD_LABELS = {
+  any:'', before:'Before food', after:'After food', empty:'Empty stomach'
+};
+const PRIORITY_ORDER = { critical:0, high:1, normal:2, low:3 };
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* ── utils ── */
+
+const Utils = {
+  pad:      n => String(n).padStart(2,'0'),
+  hmStr:    (h,m) => Utils.pad(h)+':'+Utils.pad(m),
+  todayKey: () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${Utils.pad(d.getMonth()+1)}-${Utils.pad(d.getDate())}`;
+  },
+  nowHM: () => { const n = new Date(); return Utils.hmStr(n.getHours(), n.getMinutes()); },
+  /* FIX: esc() — null-safe + escape single-quotes to prevent attribute injection */
+  esc:   s => String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;'),
+  hmToMins: hm => { const [h,m] = hm.split(':').map(Number); return h*60+m; },
+  minsToHm: m  => Utils.hmStr(Math.floor(m/60)%24, Math.round(m%60)),
+  ordinal:  n  => { if (!n || isNaN(n) || n < 1) return '—'; return n + (n===1?'st':n===2?'nd':n===3?'rd':'th'); },
+  clamp:    (v,lo,hi) => Math.min(hi, Math.max(lo,v)),
+  _uidCtr: 0,
+  uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6) + (++this._uidCtr).toString(36); },
+  greeting: () => {
+    const h = new Date().getHours();
+    if (h < 5)  return 'Good night';
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    if (h < 21) return 'Good evening';
+    return 'Good night';
+  },
+  relativeTime: mins => {
+    if (mins < 0) {
+      const m = Math.abs(mins);
+      return m < 60 ? `${Math.round(m)}m ago` : `${Math.floor(m/60)}h ago`;
+    }
+    return mins < 60 ? `in ${Math.round(mins)}m` : `in ${Math.floor(mins/60)}h`;
+  },
+  formatTime12: hm => {
+    const [h, m] = hm.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12    = h % 12 || 12;
+    return `${h12}:${Utils.pad(m)} ${period}`;
+  },
+  /* FIX: announce() — programmatic screen-reader announcement via live region */
+  announce(msg) {
+    const el = document.getElementById('pc-sr-announcer');
+    if (!el) return;
+    el.textContent = '';
+    setTimeout(() => { el.textContent = msg; }, 50);
+  }
+};
+
+/* ── store ── */
+
+const Store = (() => {
+  const PREFIX = 'pc_';
+
+  function _read(key, fallback) {
+    try {
+      const raw = localStorage.getItem(PREFIX + key);
+      if (raw === null) return fallback;
+      return JSON.parse(raw);
+    } catch(e) {
+      console.warn('[PillCare] Storage read failed:', key, e.message);
+      return fallback;
+    }
+  }
+
+  function _write(key, val) {
+    try {
+      localStorage.setItem(PREFIX + key, JSON.stringify(val));
+      return true;
+    } catch(e) {
+      /* FIX: QuotaExceededError — prune oldest history entries then retry once */
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('[PillCare] Storage quota hit — pruning history');
+        try {
+          const raw = localStorage.getItem(PREFIX + 'history');
+          if (raw) {
+            const hist = JSON.parse(raw);
+            if (Array.isArray(hist)) {
+              const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+              localStorage.setItem(PREFIX + 'history', JSON.stringify(hist.filter(h => new Date(h.date) >= cutoff)));
+            }
+          }
+          localStorage.setItem(PREFIX + key, JSON.stringify(val));
+          return true;
+        } catch(e2) {}
+      }
+      console.error('[PillCare] Storage write failed:', key, e);
+      if (typeof UI !== 'undefined') UI.toast('⚠️ Storage nearly full — please export a backup');
+      return false;
+    }
+  }
+
+  function _delete(key) {
+    try { localStorage.removeItem(PREFIX + key); } catch(e) {}
+  }
+
+  function size() {
+    try {
+      let total = 0;
+      for (const k of Object.keys(localStorage))
+        if (k.startsWith(PREFIX)) total += (localStorage[k].length + k.length) * 2;
+      return total < 1024 ? total + ' B' : (total/1024).toFixed(1) + ' KB';
+    } catch(e) { return '–'; }
+  }
+
+  function migrate() {
+    const storedVer = _read('schema_ver', 0);
+    if (storedVer >= SCHEMA_VER) return;
+    // v11→v12: ensure all pills have valid colors
+    if (storedVer < 12) {
+      const colorMap = { '#5bbcb0':'#56b4a8','#e8a44a':'#e8a94a','#e07070':'#d96b6b','#6aacdc':'#68a8d8','#6bcfa3':'#62c99a' };
+      const pills = _read('pills', []);
+      if (Array.isArray(pills)) {
+        _write('pills', pills.map(p => ({ ...p, color: colorMap[p.color] || p.color || COLORS[0] })));
+      }
+    }
+    _write('schema_ver', SCHEMA_VER);
+    console.info('[PillCare] Migrated to schema v' + SCHEMA_VER);
+  }
+
+  function sanitizePill(p) {
+    if (!p || typeof p !== 'object') return null;
+    /* FIX: validate all fields strictly — prevents prototype pollution & bad data */
+    const safeStr = (v, max, def='') => String(v == null ? def : v).slice(0, max);
+    return {
+      id:       typeof p.id === 'string' && /^[a-z0-9]+$/i.test(p.id) && p.id.length < 40 ? p.id : Utils.uid(),
+      name:     safeStr(p.name, 50) || 'Unknown',
+      dose:     safeStr(p.dose, 24),
+      freq:     ['once','custom','weekly','monthly'].includes(p.freq) ? p.freq : 'once',
+      time:     typeof p.time === 'string' && /^\d{2}:\d{2}$/.test(p.time) ? p.time : '08:00',
+      intervalHours: typeof p.intervalHours === 'number' && p.intervalHours > 0 ? p.intervalHours
+                   : typeof p.count === 'number' ? Math.round(1440/p.count/60*10)/10
+                   : undefined,
+      weekDays: Array.isArray(p.weekDays) ? p.weekDays.map(Number).filter(d => d >= 0 && d <= 6) : undefined,
+      monthDay: typeof p.monthDay === 'number' && p.monthDay >= 1 && p.monthDay <= 31 ? p.monthDay : undefined,
+      category: ['general','heart','diabetes','pain','vitamin','mental','antibiotic','other'].includes(p.category) ? p.category : 'general',
+      priority: ['normal','high','critical','low'].includes(p.priority) ? p.priority : 'normal',
+      food:     ['any','before','after','empty'].includes(p.food) ? p.food : 'any',
+      color:    typeof p.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(p.color) ? p.color : COLORS[0],
+      notes:    safeStr(p.notes, 200),
+      archived: !!p.archived,
+      createdAt: p.createdAt || new Date().toISOString(),
+    };
+  }
+
+  return { read: _read, write: _write, delete: _delete, size, migrate, sanitizePill };
+})();
+
+/* ── state ── */
+
+const State = (() => {
+  let _state = {
+    pills: [], history: [], takenToday: {}, chains: {},
+    settings: { elderly: false, reducedMotion: false, highContrast: false },
+    ui: {
+      activePage: 'today', historyFilter: 'all',
+      editingPillId: null, isArchivedEdit: false,
+      selectedColor: COLORS[0], selectedFood: 'any', selectedWeekDays: [],
+    },
+    runtime: {
+      swReg: null, deferredInstall: null, notifiedKeys: {},
+      firedSnoozeIds: new Set(), undoPill: null, undoTimer: null,
+      lastNotifTime: null, lastMinChecked: '', modalCallback: null,
+    }
+  };
+
+  const _subs = new Set();
+
+  function get() { return _state; }
+
+  function set(partial) {
+    _state = _merge(_state, partial);
+    _subs.forEach(fn => { try { fn(_state); } catch(e) {} });
+  }
+
+  function setUi(partial) { _state.ui = { ..._state.ui, ...partial }; }
+
+  function subscribe(fn) { _subs.add(fn); return () => _subs.delete(fn); }
+
+  function _merge(target, source) {
+    const out = { ...target };
+    for (const k in source) {
+      if (source[k] && typeof source[k] === 'object' && !Array.isArray(source[k]) && !(source[k] instanceof Set))
+        out[k] = _merge(target[k] || {}, source[k]);
+      else out[k] = source[k];
+    }
+    return out;
+  }
+
+  return { get, set, setUi, subscribe };
+})();
+
+/* ── persist ── */
+
+const Persist = {
+  load() {
+    Store.migrate();
+    const rawPills   = Store.read('pills',   []);
+    const rawHistory = Store.read('history', []);
+    const settings   = Store.read('settings', {});
+    const storedDate = Store.read('taken_date', null);
+    const today      = Utils.todayKey();
+    const pills      = (Array.isArray(rawPills) ? rawPills : []).map(Store.sanitizePill).filter(Boolean);
+    const history    = Array.isArray(rawHistory) ? rawHistory : [];
+    let takenToday = {}, chains = {};
+
+    if (storedDate !== today) {
+      /* FIX: Only record missed doses if gap is ≤2 days — avoids false entries after long app hiatus */
+      if (storedDate) {
+        const daysDiff = (new Date(today) - new Date(storedDate)) / 86400000;
+        if (daysDiff <= 2) this._recordMissedDoses(storedDate, pills, Store.read('taken', {}));
+      }
+      Store.write('taken_date', today);
+      Store.write('taken', {});
+      Store.write('chains', {});
+    } else {
+      takenToday = Store.read('taken',  {});
+      chains     = Store.read('chains', {});
+      /* FIX: Prune chains whose pillId no longer exists — avoids ghost reminders */
+      const validIds = new Set(pills.map(p => p.id));
+      Object.keys(chains).forEach(k => { if (!validIds.has(chains[k].pillId)) delete chains[k]; });
+    }
+
+    State.set({ pills, history, takenToday, chains,
+      settings: { elderly: !!settings.elderly, reducedMotion: !!settings.reducedMotion, highContrast: !!settings.highContrast }
+    });
+  },
+
+  savePills()    { Store.write('pills',    State.get().pills);      SW.syncSnapshot(); this._flash(); },
+  saveTaken()    { Store.write('taken',    State.get().takenToday); },
+  saveChains()   { Store.write('chains',   State.get().chains);     },
+  saveSettings() { Store.write('settings', State.get().settings);   },
+
+  saveHistory() {
+    const cutoff  = new Date(); cutoff.setDate(cutoff.getDate() - HISTORY_DAYS);
+    const trimmed = State.get().history.filter(h => new Date(h.date) >= cutoff);
+    State.set({ history: trimmed });
+    Store.write('history', trimmed);
+  },
+
+  logHistory(entry) {
+    const hist = State.get().history;
+    /* FIX: findIndex + direct assignment ensures the full entry is replaced, not partially merged */
+    const dupIdx = hist.findIndex(h => h.pillId===entry.pillId && h.date===entry.date && h.doseTime===entry.doseTime);
+    if (dupIdx >= 0) hist[dupIdx] = entry; else hist.unshift(entry);
+    State.set({ history: hist });
+    this.saveHistory();
+  },
+
+  _recordMissedDoses(date, pills, taken) {
+    // Parse date parts directly to avoid timezone-shift when creating Date objects
+    const [y,m,d] = date.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    pills.forEach(pill => {
+      if (pill.archived) return;
+      Schedule.getDosesForDate(pill, dateObj).forEach((doseTime, idx) => {
+        if (!taken[pill.id+'_dose'+idx])
+          this.logHistory({ pillId:pill.id, pillName:pill.name, color:pill.color, dose:pill.dose, date, doseTime, takenAt:null, missed:true });
+      });
+    });
+  },
+
+  _tid: null,
+  _flash() {
+    document.querySelectorAll('.autosave-dot').forEach(d => d.classList.add('visible'));
+    clearTimeout(this._tid);
+    this._tid = setTimeout(() => document.querySelectorAll('.autosave-dot').forEach(d => d.classList.remove('visible')), 1800);
+  }
+};
+
+/* ── schedule ── */
+
+const Schedule = {
+  getDoses(pill) { return this.getDosesForDate(pill, new Date()); },
+
+  getDosesForDate(pill, dateObj) {
+    const dow = dateObj.getDay(), date = dateObj.getDate();
+    if (pill.freq === 'once')    return [pill.time];
+    if (pill.freq === 'custom') {
+      // User chose interval in hours (e.g. every 6h).
+      // Start from first-dose time, repeat until midnight (1440 mins).
+      // Minimum gap enforced at 10 min. Cap at 24 doses safety limit.
+      const ivMins = Math.round((parseFloat(pill.intervalHours) || 6) * 60);
+      const safeMins = Math.max(ivMins, 10);
+      const start = Utils.hmToMins(pill.time || '08:00');
+      const doses = [];
+      for (let t = start; t < 1440 && doses.length < 24; t += safeMins) {
+        doses.push(Utils.minsToHm(t));
+      }
+      return doses;
+    }
+    if (pill.freq === 'weekly')  return (pill.weekDays||[]).map(Number).includes(dow) ? [pill.time] : [];
+    if (pill.freq === 'monthly') {
+      // Gracefully handle months shorter than monthDay (e.g. 31 in February)
+      // by firing on the last day of that month instead.
+      const daysInMonth = new Date(dateObj.getFullYear(), dateObj.getMonth()+1, 0).getDate();
+      const effectiveDay = Math.min(pill.monthDay, daysInMonth);
+      return effectiveDay === date ? [pill.time] : [];
+    }
+    return [pill.time || '08:00'];
+  },
+
+  isScheduledToday(pill) {
+    if (pill.archived) return false;
+    if (pill.freq === 'weekly')  return !!(pill.weekDays?.map(Number).includes(new Date().getDay()));
+    if (pill.freq === 'monthly') {
+      const now = new Date();
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+      return Math.min(pill.monthDay, daysInMonth) === now.getDate();
+    }
+    return true;
+  },
+
+  freqLabel(pill) {
+    if (pill.freq === 'once') return 'Once daily';
+    if (pill.freq === 'custom') {
+      const ivH = parseFloat(pill.intervalHours) || 6;
+      const ivMins = Math.round(ivH * 60);
+      const h = Math.floor(ivMins/60), m = ivMins%60;
+      const ivLabel = h > 0 ? (m > 0 ? `${h}h ${m}min` : `${h}h`) : `${m}min`;
+      const doses = this.getDoses(pill);
+      return `Every ${ivLabel} · ${doses.length} dose${doses.length!==1?'s':''} today`;
+    }
+    if (pill.freq === 'weekly')  return 'Weekly · ' + (pill.weekDays||[]).sort((a,b)=>a-b).map(d=>DAY_NAMES[d]).join(', ');
+    if (pill.freq === 'monthly') return 'Monthly · ' + Utils.ordinal(pill.monthDay);
+    return '';
+  },
+
+  getDoseBadge(doseTime, taken, chainKey) {
+    if (taken) return { label:'Taken ✓', cls:'badge-mint', rowCls:'is-taken' };
+    if (State.get().chains[chainKey]) return { label:'Not taken', cls:'badge-amber', rowCls:'is-chain' };
+    const [h,m] = doseTime.split(':').map(Number);
+    const dose  = new Date(); dose.setHours(h,m,0,0);
+    const diff  = (dose - new Date()) / 60000;
+    if (diff < -30) return { label:'Overdue',               cls:'badge-rose',  rowCls:'is-overdue' };
+    if (diff <  0)  return { label:'Right now',              cls:'badge-sage',  rowCls:'is-now' };
+    if (diff <= 30) return { label:Utils.relativeTime(diff), cls:'badge-amber', rowCls:'is-soon' };
+    const dh = Math.floor(diff/60), dm = Math.round(diff%60);
+    return { label:(dh>0?dh+'h ':'')+dm+'m', cls:'badge-muted', rowCls:'' };
+  },
+
+  isDuplicate(name, excludeId) {
+    return State.get().pills.some(p => p.id !== excludeId && p.name.toLowerCase().trim() === name.toLowerCase().trim());
+  },
+
+  findConflicts(pill) {
+    const myDoses = this.getDoses(pill), warnings = [];
+    State.get().pills.forEach(other => {
+      if (other.id === pill.id || other.archived) return;
+      this.getDoses(other).forEach(t2 => {
+        myDoses.forEach(t1 => {
+          if (Math.abs(Utils.hmToMins(t1) - Utils.hmToMins(t2)) <= 15)
+            warnings.push(`${other.name} is also scheduled around ${t2}`);
+        });
+      });
+    });
+    return [...new Set(warnings)].slice(0,2);
+  }
+};
+
+/* ── chains ── */
+
+const Chains = {
+  start(pill, idx, doseTime, label) {
+    const key = pill.id+'_dose'+idx, chains = State.get().chains;
+    if (chains[key]) return;
+    chains[key] = { nextFireAt:Date.now()+CHAIN_HOURS*3600000, pillName:label, dose:pill.dose, color:pill.color, doseTime, pillId:pill.id, doseIdx:idx, scheduledDay:Utils.todayKey(), startedAt:Date.now(), chainCount:0 };
+    State.set({ chains }); Persist.saveChains();
+  },
+  stop(pillId, idx) {
+    const chains = State.get().chains, key = pillId+'_dose'+idx;
+    if (chains[key]) { delete chains[key]; State.set({ chains }); Persist.saveChains(); }
+  },
+  stopAll(pillId) {
+    const chains = State.get().chains;
+    Object.keys(chains).forEach(k => { if (chains[k].pillId===pillId) delete chains[k]; });
+    State.set({ chains }); Persist.saveChains();
+  },
+  prune() {
+    const { chains, takenToday } = State.get(), now = Date.now(), today = Utils.todayKey();
+    let changed = false;
+    Object.keys(chains).forEach(k => {
+      const c = chains[k];
+      if (takenToday[c.pillId+'_dose'+c.doseIdx] || c.scheduledDay!==today || (c.startedAt&&now-c.startedAt>12*3600000))
+        { delete chains[k]; changed = true; }
+    });
+    if (changed) { State.set({ chains }); Persist.saveChains(); }
+  }
+};
+
+/* ── notif ── */
+
+const Notif = {
+  async request() {
+    if (!('Notification' in window)) { UI.toast('Notifications not supported in this browser'); return; }
+    const p = await Notification.requestPermission();
+    if (p === 'granted') { Store.delete('notif_dismissed'); UI.hideBanner('pc-notif-banner'); UI.toast('🔔 Reminders enabled'); this.sendTest(); }
+    else if (p === 'denied') UI.toast('Notifications blocked — please allow in browser settings');
+    Diagnostics.refresh();
+  },
+
+  async fire(name, dose, time, type, pillData={}) {
+    if (Notification.permission !== 'granted') return false;
+    const { runtime } = State.get();
+    const tag   = `pc-${pillData.id||name}-${(time||'').replace(':','')}-${Utils.todayKey()}`;
+    const title = type==='chain' ? `🔔 ${name}` : type==='snooze' ? `⏰ ${name}` : `💊 ${name}`;
+    const food  = pillData.food && pillData.food!=='any' ? FOOD_LABELS[pillData.food] : '';
+    const body  = type==='chain'  ? [dose||'','Whenever you\'re ready'].filter(Boolean).join(' · ')
+                : type==='snooze' ? [dose||'','Time to take your dose'].filter(Boolean).join(' · ')
+                : [dose||'',`Scheduled: ${time}`,food].filter(Boolean).join(' · ');
+    const opts  = { body, icon:'icons/icon-192.png', badge:'icons/icon-72.png',
+      vibrate: type==='chain' ? [250,100,250,100,400] : [180,50,180],
+      requireInteraction: pillData.priority==='critical'||pillData.priority==='high', tag,
+      /* FIX: renotify:true allows chain reminders to re-show even with the same tag */
+      renotify: type === 'chain',
+      actions:[{action:'taken',title:'✓ Mark taken'},{action:'snooze',title:'⏰ Snooze 5 min'}],
+      data:{ pillId:pillData.id, doseTime:time, date:Utils.todayKey(), name, dose, priority:pillData.priority }
+    };
+    try {
+      if (runtime.swReg?.active) { await runtime.swReg.showNotification(title, opts); runtime.lastNotifTime=new Date(); return true; }
+    } catch(e) {}
+    try { new Notification(title, {body:opts.body,requireInteraction:opts.requireInteraction,tag}); runtime.lastNotifTime=new Date(); return true; }
+    catch(e) { return false; }
+  },
+
+  async sendTest() {
+    if (Notification.permission!=='granted') { await this.request(); return; }
+    const ok = await this.fire('Test reminder','100mg',Utils.nowHM(),'scheduled',{priority:'normal'});
+    UI.toast(ok ? '🔔 Test reminder sent' : 'Could not send — check browser settings');
+    Diagnostics.refresh();
+  }
+};
+
+/* ── reminders ── */
+
+const Reminders = {
+  _lastTodayKey: '',
+
+  /* Persist fired dose keys to localStorage so page refresh doesn't re-fire */
+  _getFiredKeys() {
+    try { return new Set(JSON.parse(localStorage.getItem('pc_fired_keys') || '[]')); } catch(e) { return new Set(); }
+  },
+  _addFiredKey(key) {
+    try {
+      const keys = this._getFiredKeys(); keys.add(key);
+      // Only keep today's keys — prune old ones
+      const today = Utils.todayKey();
+      const pruned = [...keys].filter(k => k.includes(today));
+      localStorage.setItem('pc_fired_keys', JSON.stringify(pruned));
+    } catch(e) {}
+  },
+
+  check() {
+    const s = State.get(), now = new Date(),
+          hm = Utils.hmStr(now.getHours(), now.getMinutes()),
+          ms = now.getTime(), today = Utils.todayKey();
+
+    /* Midnight rollover */
+    if (this._lastTodayKey && this._lastTodayKey !== today) {
+      this._lastTodayKey = today;
+      try { localStorage.removeItem('pc_fired_keys'); } catch(e) {}
+      Persist.load(); Render.today(); return;
+    }
+    this._lastTodayKey = today;
+
+    if (Store.read('taken_date') !== today) { Persist.load(); Render.today(); return; }
+    Chains.prune();
+
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    /* Load persisted fired keys — survives refresh */
+    const firedKeys = this._getFiredKeys();
+    /* Load snoozed list once */
+    const snoozedList = Store.read('snoozed', []);
+    /* Set of pillIds that currently have an active (not yet fired) snooze */
+    const snoozedPillIds = new Set(snoozedList.filter(sv => ms < sv.fireAt).map(sv => sv.pillId));
+
+    s.pills.forEach(pill => {
+      if (!Schedule.isScheduledToday(pill)) return;
+      Schedule.getDoses(pill).forEach((doseTime, idx) => {
+        if (s.takenToday[pill.id + '_dose' + idx]) return; // already taken
+
+        const [dh, dm] = doseTime.split(':').map(Number);
+        const doseMins = dh * 60 + dm;
+        const diffMins = nowMins - doseMins; // positive = overdue
+
+        // Fire if dose was scheduled 0–5 minutes ago (window catches missed ticks)
+        if (diffMins < 0 || diffMins > 5) return;
+
+        // FIX: suppress original-time notification if snooze is active for this pill
+        if (snoozedPillIds.has(pill.id)) return;
+
+        const fireKey = pill.id + '_fired_' + today + '_' + doseTime + '_' + idx;
+        // FIX: check persisted fired keys (survives refresh) not just in-memory Set
+        if (firedKeys.has(fireKey)) return;
+
+        this._addFiredKey(fireKey);
+
+        const label = Schedule.getDoses(pill).length > 1
+          ? `${pill.name} (${idx + 1}/${Schedule.getDoses(pill).length})`
+          : pill.name;
+
+        Notif.fire(label, pill.dose, doseTime, 'scheduled', pill).catch(() => {});
+        Chains.start(pill, idx, doseTime, label);
+      });
+    });
+
+    s.runtime.lastMinChecked = hm;
+
+    // Chain follow-up reminders
+    Object.keys(s.chains).forEach(k => {
+      const c = s.chains[k];
+      if (s.takenToday[c.pillId + '_dose' + c.doseIdx]) { Chains.stop(c.pillId, c.doseIdx); return; }
+      if (c.scheduledDay !== today) { Chains.stop(c.pillId, c.doseIdx); return; }
+      if (ms >= c.nextFireAt) {
+        c.chainCount = (c.chainCount || 0) + 1;
+        Notif.fire(c.pillName, c.dose, c.doseTime, 'chain', { id: c.pillId, priority: c.priority }).catch(() => {});
+        c.nextFireAt = ms + CHAIN_HOURS * 3600000;
+        Persist.saveChains();
+      }
+    });
+
+    // Snoozed doses — fire when their fireAt time is reached
+    const remaining = [];
+    snoozedList.forEach(sv => {
+      if (ms >= sv.fireAt) {
+        // FIX: use persisted snooze fired key so refresh doesn't re-fire
+        const snoozeFiredKey = 'snooze_' + sv.id;
+        if (!firedKeys.has(snoozeFiredKey)) {
+          this._addFiredKey(snoozeFiredKey);
+          Notif.fire(sv.name, sv.dose, sv.time, 'snooze', s.pills.find(p => p.id === sv.pillId) || {}).catch(() => {});
+        }
+        // Don't keep in remaining — it's been processed
+      } else {
+        remaining.push(sv);
+      }
+    });
+    if (remaining.length !== snoozedList.length) Store.write('snoozed', remaining);
+
+    // SW ping throttled to 60s
+    const now60 = Date.now();
+    if (!s.runtime._lastPing || now60 - s.runtime._lastPing > 60000) {
+      s.runtime._lastPing = now60;
+      if (s.runtime.swReg?.active) try { s.runtime.swReg.active.postMessage({ type: 'PING' }); } catch (e) {}
+    }
+  }
+};
+
+/* ── actions ── */
+
+const Actions = {
+  markDose(pillId, doseIdx) {
+    const s = State.get(), pill = s.pills.find(p=>p.id===pillId);
+    if (!pill) return;
+    const key = pillId+'_dose'+doseIdx, doses = Schedule.getDoses(pill), doseTime = doses[doseIdx]||pill.time;
+    if (s.takenToday[key]) {
+      delete s.takenToday[key]; State.set({takenToday:s.takenToday}); Persist.saveTaken();
+      s.history = s.history.filter(h => !(h.pillId===pillId&&h.date===Utils.todayKey()&&h.doseTime===doseTime));
+      State.set({history:s.history}); Persist.saveHistory();
+      UI.toast('Marked as not taken');
+      Utils.announce(`${pill.name} marked as not taken`);
+    } else {
+      s.takenToday[key] = new Date().toISOString(); State.set({takenToday:s.takenToday}); Persist.saveTaken();
+      Chains.stop(pillId,doseIdx); this._clearSnooze(pillId);
+      Persist.logHistory({ pillId, pillName:pill.name, color:pill.color, dose:pill.dose, date:Utils.todayKey(), doseTime, takenAt:new Date().toISOString(), missed:false });
+      UI.toast(`✓ ${pill.name} recorded`);
+      Utils.announce(`${pill.name} recorded as taken`);
+      const btn = document.querySelector(`.take-btn[data-pill="${pillId}"][data-idx="${doseIdx}"]`);
+      if (btn) { btn.style.animation='pc-takePop 0.25s ease'; setTimeout(()=>btn.style.animation='',280); }
+    }
+    Render.today(); SW.syncSnapshot();
+  },
+
+  snoozeDose(pillId, doseIdx) {
+    const pill = State.get().pills.find(p=>p.id===pillId); if (!pill) return;
+    const doseTime = Schedule.getDoses(pill)[doseIdx]||pill.time, fireAt = Date.now()+5*60*1000;
+    const snoozed  = Store.read('snoozed',[]);
+    if (!snoozed.find(sv=>sv.pillId===pillId&&sv.time===doseTime)) {
+      snoozed.push({id:pillId+'-'+doseIdx+'-'+fireAt,pillId,name:pill.name,dose:pill.dose,time:doseTime,fireAt});
+      Store.write('snoozed',snoozed);
+      const cKey = pill.id+'_dose'+doseIdx, chains = State.get().chains;
+      if (chains[cKey]) { chains[cKey].nextFireAt=fireAt+CHAIN_HOURS*3600000; Persist.saveChains(); }
+      UI.toast('Snoozed for 5 minutes');
+      Utils.announce(`${pill.name} snoozed for 5 minutes`);
+      // Sync to SW so it schedules the alarm even if tab goes to background
+      SW.syncSnapshot();
+    }
+  },
+
+  savePill() {
+    const ui = State.get().ui, name = document.getElementById('f-name').value.trim();
+    if (!name) { const el=document.getElementById('f-name'); el.classList.add('is-error'); el.focus(); UI.toast('Please enter a medication name'); return; }
+    document.getElementById('f-name').classList.remove('is-error');
+
+    const freq=document.getElementById('f-freq').value, dose=document.getElementById('f-dose').value.trim(),
+          notes=document.getElementById('f-notes').value.trim(), category=document.getElementById('f-category').value,
+          priority=document.getElementById('f-priority').value;
+    const pill = { id:ui.editingPillId||Utils.uid(), name,dose,freq,notes,category,priority, food:ui.selectedFood, color:ui.selectedColor, archived:ui.isArchivedEdit,
+      createdAt:ui.editingPillId?(State.get().pills.find(p=>p.id===ui.editingPillId)?.createdAt||new Date().toISOString()):new Date().toISOString() };
+
+    if (freq==='once') { const t=document.getElementById('f-time-once').value; if (!t){UI.toast('Please set a reminder time');return;} pill.time=t; }
+    else if (freq==='custom') {
+      const ivHrs=parseFloat(document.getElementById('f-interval-hrs').value), t=document.getElementById('f-time-custom').value;
+      if (!t){UI.toast('Set the first dose time');return;}
+      if (!ivHrs||ivHrs<=0){UI.toast('Choose how often to repeat');return;}
+      if (ivHrs*60<10){UI.toast('Minimum interval is 10 minutes');return;}
+      pill.time=t; pill.intervalHours=ivHrs;
+    } else if (freq==='weekly') {
+      const t=document.getElementById('f-time-weekly').value, days=ui.selectedWeekDays;
+      if (!days.length){UI.toast('Select at least one day');return;} if (!t){UI.toast('Set a reminder time');return;}
+      pill.time=t; pill.weekDays=[...days].sort((a,b)=>a-b);
+    } else if (freq==='monthly') {
+      const md=parseInt(document.getElementById('f-month-day').value), t=document.getElementById('f-time-monthly').value;
+      if (!md){UI.toast('Select a day of the month');return;} if (!t){UI.toast('Set a reminder time');return;}
+      pill.time=t; pill.monthDay=md;
+    }
+
+    const s=State.get();
+    if (ui.editingPillId) { const idx=s.pills.findIndex(p=>p.id===ui.editingPillId); if (idx>=0) s.pills[idx]=pill; State.set({pills:s.pills}); UI.toast(`${name} updated`); }
+    else { s.pills.push(pill); State.set({pills:s.pills}); const c=Schedule.isScheduledToday(pill)?Schedule.getDoses(pill).length:0; UI.toast(`${name} added${c?` — ${c} dose${c>1?'s':''} today`:''}`); }
+    Persist.savePills(); UI.closeSheet(); Render.all();
+  },
+
+  deletePill(id) {
+    const pill = State.get().pills.find(p=>p.id===id); if (!pill) return;
+    UI.openModal({ icon:'🗑️', title:`Remove ${pill.name}?`, body:'This medication and its reminders will be removed. You can undo right away.', confirmText:'Remove', confirmCls:'btn-danger',
+      onConfirm:() => {
+        const s=State.get(); s.runtime.undoPill={pill,index:s.pills.findIndex(p=>p.id===id)};
+        s.pills=s.pills.filter(p=>p.id!==id); State.set({pills:s.pills});
+        Chains.stopAll(id); Persist.savePills(); Render.all(); UI.showUndoToast(`${pill.name} removed`);
+      }
+    });
+  },
+
+  undoDelete() {
+    const { undoPill } = State.get().runtime; if (!undoPill) return;
+    const s=State.get(); s.pills.splice(undoPill.index,0,undoPill.pill); State.set({pills:s.pills});
+    State.get().runtime.undoPill=null; State.set({runtime:State.get().runtime});
+    Persist.savePills(); Render.all(); UI.hideUndoToast();
+    UI.toast(`${undoPill.pill.name} restored`);
+    Utils.announce(`${undoPill.pill.name} restored`);
+  },
+
+  duplicatePill(id) {
+    const orig=State.get().pills.find(p=>p.id===id); if (!orig) return;
+    const s=State.get(); s.pills.push({...orig,id:Utils.uid(),name:orig.name+' (copy)',createdAt:new Date().toISOString()});
+    State.set({pills:s.pills}); Persist.savePills(); Render.all(); UI.toast(`${orig.name} duplicated`);
+  },
+
+  exportData() {
+    const s=State.get(), data={version:SCHEMA_VER,exportedAt:new Date().toISOString(),appName:'PillCare',pills:s.pills,history:s.history,settings:s.settings};
+    const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+    const a=document.createElement('a'); a.href=url; a.download='pillcare-backup-'+Utils.todayKey()+'.json'; a.click(); URL.revokeObjectURL(url);
+    UI.toast('Backup exported');
+  },
+
+  importData(file) {
+    if (!file) return;
+    const r=new FileReader();
+    r.onload=e=>{
+      try {
+        const data=JSON.parse(e.target.result);
+        if (!data.pills||!Array.isArray(data.pills)) throw new Error('Invalid format');
+        if (data.appName&&data.appName!=='PillCare') throw new Error('Not a PillCare backup');
+        const s=State.get();
+        UI.openModal({ icon:'📦', title:'Restore backup?',
+          body:`Replace your ${s.pills.length} medication(s) with ${data.pills.length} from backup (${data.exportedAt?new Date(data.exportedAt).toLocaleDateString():'unknown date'})?`,
+          confirmText:'Restore', confirmCls:'btn-primary',
+          onConfirm:()=>{ const pills=(data.pills||[]).map(Store.sanitizePill).filter(Boolean); State.set({pills,history:Array.isArray(data.history)?data.history:[],settings:{...s.settings,...(data.settings||{})}}); Persist.savePills();Persist.saveHistory();Persist.saveSettings();Settings.apply();Render.all();UI.toast(`${pills.length} medications restored`); }
+        });
+      } catch(err) { UI.toast('Could not read backup: '+err.message); }
+    };
+    r.readAsText(file);
+  },
+
+  _clearSnooze(pillId) { Store.write('snoozed',Store.read('snoozed',[]).filter(s=>s.pillId!==pillId)); }
+};
+
+/* ── settings + diagnostics ── */
+
+const Settings = {
+  toggle(key) {
+    const s = State.get().settings; s[key]=!s[key];
+    State.set({settings:s}); Persist.saveSettings(); this.apply();
+  },
+  apply() {
+    const { settings } = State.get();
+    document.body.classList.toggle('pc-elderly',        !!settings.elderly);
+    document.body.classList.toggle('pc-reduced-motion', !!settings.reducedMotion);
+    document.body.classList.toggle('pc-hc',             !!settings.highContrast);
+    ['elderly','reducedMotion','highContrast'].forEach(key => {
+      const t = document.querySelector(`[data-setting="${key}"]`); if (!t) return;
+      t.classList.toggle('on', !!settings[key]); t.setAttribute('aria-checked', String(!!settings[key]));
+    });
+  }
+};
+
+const Diagnostics = {
+  refresh() {
+    const { runtime } = State.get(), perm = 'Notification' in window ? Notification.permission : 'not-supported';
+    const set = (id, text, cls) => { const el=document.getElementById(id); if (el){el.textContent=text;if(cls)el.className='diag-val '+cls;} };
+    set('diag-notif', perm, perm==='granted'?'diag-ok':perm==='denied'?'diag-err':'diag-warn');
+    set('diag-last',  runtime.lastNotifTime ? runtime.lastNotifTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'None this session');
+    set('diag-chains',Object.keys(State.get().chains).length);
+    set('diag-snooze',Store.read('snoozed',[]).length);
+    set('diag-storage',Store.size());
+    const _isPwa=window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone===true;
+    set('diag-pwa', _isPwa?'Yes':'No');
+    const dot=document.getElementById('pc-health-dot'); if (dot) {
+      const good=runtime.swReg&&perm==='granted', warn=!runtime.swReg||perm==='default';
+      dot.className='health-dot '+(good?'health-ok':warn?'health-warn':'health-bad');
+    }
+
+    /* FIX: show next upcoming dose time so user can verify reminders will fire */
+    const s = State.get(), nowMins = new Date().getHours()*60 + new Date().getMinutes();
+    const upcoming = [];
+    s.pills.forEach(pill => {
+      if (!Schedule.isScheduledToday(pill)) return;
+      Schedule.getDoses(pill).forEach((t, i) => {
+        if (s.takenToday[pill.id+'_dose'+i]) return;
+        const [h,m] = t.split(':').map(Number);
+        const mins = h*60+m;
+        if (mins >= nowMins) upcoming.push({ mins, label: `${pill.name} @ ${Utils.formatTime12(t)}` });
+      });
+    });
+    upcoming.sort((a,b)=>a.mins-b.mins);
+    const nextEl = document.getElementById('diag-next');
+    if (nextEl) nextEl.textContent = upcoming.length ? upcoming[0].label : 'None today';
+  }
+};
+
+/* ── render ── */
+
+const Render = {
+  _conflictCache: null,
+  all() {
+    this._conflictCache = null; // invalidate on every full render
+    this.today();
+    const active = document.querySelector('.page.active')?.id;
+    if (active==='page-meds')    this.meds();
+    if (active==='page-history') this.history();
+  },
+
+  today() {
+    this._conflictCache = null; // fresh conflict cache each render
+    const s     = State.get();
+    const today = s.pills.filter(p => Schedule.isScheduledToday(p) && !p.archived);
+    let total=0, taken=0;
+    today.forEach(p => {
+      const doses=Schedule.getDoses(p); total+=doses.length;
+      doses.forEach((_,i)=>{ if(s.takenToday[p.id+'_dose'+i]) taken++; });
+    });
+
+    // Stats
+    document.getElementById('pc-stat-taken').textContent  = taken;
+    // pc-stat-due is handled by the celebration block below (avoids double-write)
+    document.getElementById('pc-stat-streak').textContent = this._streak();
+
+    // All-done celebration
+    const dueCard=document.getElementById('pc-stat-due-card');
+    const dueLabel=document.getElementById('pc-stat-due-label');
+    if(dueCard && dueLabel) {
+      if(total>0 && taken===total) {
+        dueCard.style.background='linear-gradient(135deg,rgba(98,201,154,0.12),rgba(86,180,168,0.06))';
+        dueCard.style.borderColor='rgba(98,201,154,0.28)';
+        document.getElementById('pc-stat-due').textContent='✓';
+        document.getElementById('pc-stat-due').style.fontSize='var(--fs-xl)';
+        dueLabel.textContent='All done!';
+        dueLabel.style.color='var(--c-mint)';
+      } else {
+        dueCard.style.background='';
+        dueCard.style.borderColor='';
+        const dueEl=document.getElementById('pc-stat-due');
+        dueEl.textContent=total-taken;
+        dueEl.style.fontSize='';
+        dueLabel.textContent='Remaining';
+        dueLabel.style.color='';
+      }
+    }
+
+    // Adherence bar
+    const wrap=document.getElementById('pc-adherence-wrap');
+    if (total>0) {
+      const pct=Math.round((taken/total)*100);
+      document.getElementById('pc-adherence-pct').textContent = pct+'%';
+      const fill=document.getElementById('pc-adherence-fill');
+      fill.style.width=pct+'%';
+      fill.style.background=pct>=80?'linear-gradient(90deg,var(--c-sage),var(--c-mint))':pct>=50?'linear-gradient(90deg,var(--c-amber),var(--c-sage))':'linear-gradient(90deg,var(--c-rose),var(--c-amber))';
+      document.getElementById('pc-adherence-bar').setAttribute('aria-valuenow',pct);
+      wrap.classList.remove('hidden');
+    } else { wrap.classList.add('hidden'); document.getElementById('pc-adherence-bar').setAttribute('aria-valuenow','0'); }
+
+    // Gentle alert for critical meds
+    const critAlert=document.getElementById('pc-critical-alert');
+    const critDue=today.filter(p=>p.priority==='critical').filter(p=>Schedule.getDoses(p).some((_,i)=>!s.takenToday[p.id+'_dose'+i]));
+    if (critDue.length) {
+      document.getElementById('pc-critical-text').textContent=critDue.length===1?`${critDue[0].name} — whenever you're ready`:`${critDue.length} important medications to take`;
+      critAlert.classList.remove('hidden');
+    } else critAlert.classList.add('hidden');
+
+    this._renderMissedBanner();
+    this._renderAllDoneBanner(taken, total);
+
+    // Timeline view
+    const list=document.getElementById('pc-pill-list');
+    if (!today.length) {
+      list.innerHTML=`<div class="empty-state"><div class="empty-icon" aria-hidden="true">💊</div><h3>Nothing scheduled today</h3><p>Tap <strong>＋</strong> below to add your first medication.<br>It only takes a moment.</p></div>`;
+      return;
+    }
+    list.innerHTML = this._buildTimeline(today, s);
+  },
+
+  // ── TODAY TIMELINE ──
+  // Groups doses by time slot in chronological order
+  // Shows current time position, past/present/upcoming
+  _buildTimeline(pills, s) {
+    // Flatten all doses into a sorted timeline array
+    const allDoses = [];
+    pills.forEach(pill => {
+      Schedule.getDoses(pill).forEach((doseTime, idx) => {
+        allDoses.push({ pill, doseTime, idx, key: pill.id+'_dose'+idx });
+      });
+    });
+    allDoses.sort((a,b) => a.doseTime.localeCompare(b.doseTime));
+
+    let html     = '';
+    let lastHour = -1;
+
+    allDoses.forEach(({ pill, doseTime, idx, key }) => {
+      const taken     = !!s.takenToday[key];
+      const badge     = Schedule.getDoseBadge(doseTime, taken, key);
+      const chaining  = !taken && s.chains[key];
+      const isUrgent  = !taken && (badge.rowCls==='is-overdue'||badge.rowCls==='is-now'||badge.rowCls==='is-soon');
+      // doseMins removed — was only used for old showNow calc (now uses clock hour)
+      const catIcon   = CAT_ICONS[pill.category||'general']||'💊';
+      const food      = FOOD_LABELS[pill.food||'any'];
+      const priCls    = pill.priority==='critical'?'tl-critical':pill.priority==='high'?'tl-high':'';
+
+      // Hour separator when hour changes
+      const doseHour = parseInt(doseTime.split(':')[0], 10);
+      if (doseHour !== lastHour) {
+        lastHour = doseHour;
+        const _hr = doseHour;
+        // Show NOW only on the hour-group that CONTAINS the current minute
+        const showNow = _hr === new Date().getHours();
+        const _ampm = _hr >= 12 ? 'PM' : 'AM';
+        const _hrDisplay = _hr % 12 || 12;
+        html += `<div class="tl-hour-label" aria-hidden="true">${_hrDisplay} ${_ampm}${showNow?'<span class="tl-now-pill">NOW</span>':''}</div>`;
+      }
+
+      html += `
+        <div class="tl-item ${badge.rowCls} ${taken?'tl-done':''} ${priCls}"
+             role="listitem"
+             aria-label="${Utils.esc(pill.name)} at ${Utils.formatTime12(doseTime)}: ${taken?'taken':badge.label}">
+          <div class="tl-left">
+            <div class="tl-time">${Utils.formatTime12(doseTime)}</div>
+            <div class="tl-track">
+              <div class="tl-dot ${taken?'tl-dot-done':badge.rowCls==='is-overdue'?'tl-dot-over':badge.rowCls==='is-now'||badge.rowCls==='is-soon'?'tl-dot-soon':''}"
+                   style="border-color:${Utils.esc(pill.color)};${taken?`background:${Utils.esc(pill.color)}`:''}"
+                   aria-hidden="true"></div>
+              <div class="tl-line" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="tl-card">
+            <div class="tl-card-top">
+              <span class="tl-name">${catIcon} ${Utils.esc(pill.name)}</span>
+              ${pill.dose?`<span class="tl-dose">${Utils.esc(pill.dose)}</span>`:''}
+            </div>
+            ${food?`<div class="tl-food">${Utils.esc(food)}</div>`:''}
+            ${pill.notes?`<div class="tl-note">${Utils.esc(pill.notes)}</div>`:''}
+            ${pill.priority==='critical'?`<div class="tl-priority-badge">⚠ Important</div>`:''}
+            ${(()=>{ const cc=Render._conflictCache||(Render._conflictCache={}); if(!(pill.id in cc)) cc[pill.id]=Schedule.findConflicts(pill); return cc[pill.id].length?'<div class="tl-conflict">⚠ Schedule overlap</div>':''; })()}
+            <div class="tl-card-actions">
+              ${chaining?`<span class="badge badge-chain" aria-label="Repeat reminder active">↻ Repeating</span>`:``}
+              ${isUrgent&&!taken?`<button class="snooze-btn" data-action="snooze" data-pill="${pill.id}" data-idx="${idx}" aria-label="Snooze ${Utils.esc(pill.name)} 5 minutes">⏰ 5 min</button>`:''}
+              <button class="take-btn ${taken?'taken':''}"
+                      data-action="mark" data-pill="${pill.id}" data-idx="${idx}"
+                      aria-label="${taken?'Unmark':'Mark as taken'}: ${Utils.esc(pill.name)} ${Utils.formatTime12(doseTime)}"
+                      aria-pressed="${taken}">
+                ${taken?'✓':'○'}
+              </button>
+            </div>
+          </div>
+          <div class="tl-edit-btn">
+            <button class="btn-icon btn-icon-sm" data-action="edit" data-pill="${pill.id}"
+                    aria-label="Edit ${Utils.esc(pill.name)}">✏️</button>
+          </div>
+        </div>`;
+    });
+
+    return `<div class="timeline-list" role="list" aria-label="Today's medication schedule">${html}</div>`;
+  },
+
+  _renderAllDoneBanner(taken, total) {
+    let el=document.getElementById('pc-alldone-banner');
+    if(total>0 && taken===total) {
+      if(!el){
+        el=document.createElement('div');
+        el.id='pc-alldone-banner';
+        el.className='pc-banner';
+        el.style.cssText='background:linear-gradient(135deg,rgba(98,201,154,0.08),rgba(86,180,168,0.04));border:1px solid rgba(98,201,154,0.22);animation:pc-fadeDown var(--dur-slow) var(--ease-out);margin-top:12px;';
+        el.setAttribute('role','status');
+        el.innerHTML='<div style="font-size:1.4rem" aria-hidden="true">🎉</div><div><strong style="color:var(--c-mint);font-size:var(--fs-md)">All done for today!</strong><div style="font-size:var(--fs-xs);color:var(--c-text3);margin-top:2px">Every dose taken — great work keeping up with your health.</div></div>';
+        // Insert AFTER the pill list (at the bottom, not before content)
+        const list=document.getElementById('pc-pill-list');
+        list.parentNode.insertBefore(el, list.nextSibling);
+      }
+      el.classList.remove('hidden');
+    } else {
+      if(el) el.classList.add('hidden');
+    }
+  },
+
+  _renderMissedBanner() {
+    const s=State.get(), banner=document.getElementById('pc-missed-banner'); if (!banner) return;
+    const yd=new Date(); yd.setDate(yd.getDate()-1);
+    const ydStr=`${yd.getFullYear()}-${Utils.pad(yd.getMonth()+1)}-${Utils.pad(yd.getDate())}`;
+    const yMissed=s.history.filter(h=>h.date===ydStr&&h.missed);
+    if (!yMissed.length||Store.read('missed_banner_'+Utils.todayKey(),false)) { banner.classList.add('hidden'); return; }
+    const names=[...new Set(yMissed.map(h=>h.pillName))].slice(0,2);
+    document.getElementById('pc-missed-title').textContent=`You missed ${yMissed.length} dose${yMissed.length>1?'s':''} yesterday`;
+    document.getElementById('pc-missed-text').textContent=`${names.join(' and ')}${yMissed.length>2?' and others':''} — that's okay. Just continue today.`;
+    document.getElementById('pc-missed-actions').innerHTML=`<button class="btn btn-ghost" style="font-size:var(--fs-xs);height:32px;padding:0 12px" data-action="dismiss-missed">Okay, thanks</button>`;
+    banner.classList.remove('hidden');
+  },
+
+  _streak() {
+    const hist=State.get().history, today=new Date(), todayStr=Utils.todayKey();
+    // Check if today is already complete (all doses taken, none missed)
+    const todayEntries=hist.filter(h=>h.date===todayStr);
+    const todayComplete=todayEntries.length>0&&!todayEntries.some(h=>h.missed);
+    let streak=todayComplete?1:0;
+    for (let i=1;i<=90;i++) {
+      const d=new Date(today); d.setDate(d.getDate()-i);
+      const ds=d.toISOString().slice(0,10), day=hist.filter(h=>h.date===ds);
+      if (!day.length||day.some(h=>h.missed)) break;
+      streak++;
+    }
+    return streak;
+  },
+
+  meds() {
+    const s=State.get(), active=s.pills.filter(p=>!p.archived), archived=s.pills.filter(p=>p.archived);
+    const list=document.getElementById('pc-meds-list'), countEl=document.getElementById('pc-meds-count');
+    if (countEl) countEl.textContent=active.length+' active medication'+(active.length!==1?'s':'');
+    if (!active.length&&!archived.length) { list.innerHTML=`<div class="empty-state"><div class="empty-icon" aria-hidden="true">💊</div><h3>No medications yet</h3><p>Tap <strong>＋</strong> to add your first medication.<br>Takes less than a minute.</p></div>`; return; }
+    const sorted=[...active].sort((a,b)=>(PRIORITY_ORDER[a.priority||'normal']-PRIORITY_ORDER[b.priority||'normal'])||a.name.localeCompare(b.name));
+    let html=sorted.map(pill=>{
+      const catIcon=CAT_ICONS[pill.category||'general']||'💊', food=FOOD_LABELS[pill.food||'any'];
+      const priCls=pill.priority==='critical'?'is-priority-critical':pill.priority==='high'?'is-priority-high':'';
+      return `<article class="pill-card ${priCls}" data-pill-id="${pill.id}">
+        <div class="pill-header">
+          <div class="pill-color-dot" style="background:${Utils.esc(pill.color)}" aria-hidden="true"></div>
+          <div class="pill-header-info">
+            <div class="pill-name">${pill.priority==='critical'?'<span style="color:var(--c-rose)" aria-label="Critical">⚠ </span>':''}${Utils.esc(pill.name)}</div>
+            <div class="pill-tags">
+              <span class="pill-meta">${catIcon} ${Utils.esc(pill.dose||'No dosage')}</span>
+              <span class="pill-meta">· ${Utils.esc(Schedule.freqLabel(pill))}</span>
+              ${food?`<span class="pill-meta">· ${Utils.esc(food)}</span>`:''}
+            </div>
+          </div>
+          <div class="pill-actions">
+            <button class="btn-icon" data-action="edit"      data-pill="${pill.id}" aria-label="Edit ${Utils.esc(pill.name)}">✏️</button>
+            <button class="btn-icon" data-action="duplicate" data-pill="${pill.id}" aria-label="Duplicate ${Utils.esc(pill.name)}">📋</button>
+            <button class="btn-icon is-danger" data-action="delete" data-pill="${pill.id}" aria-label="Remove ${Utils.esc(pill.name)}">🗑️</button>
+          </div>
+        </div>${pill.notes?`<div class="pill-note">📝 ${Utils.esc(pill.notes)}</div>`:''}
+      </article>`;
+    }).join('');
+    if (archived.length) html+=`<button class="archived-toggle-btn" data-action="toggle-archived" aria-expanded="false">📦 Archived (${archived.length})</button><div id="archived-list" hidden>${archived.map(pill=>`<article class="pill-card" style="opacity:0.48" data-pill-id="${pill.id}"><div class="pill-header"><div class="pill-color-dot" style="background:${Utils.esc(pill.color)}" aria-hidden="true"></div><div class="pill-header-info"><div class="pill-name">${Utils.esc(pill.name)}</div><div class="pill-tags"><span class="pill-meta">${Utils.esc(pill.dose||'')}</span><span class="pill-meta">· ${Utils.esc(Schedule.freqLabel(pill))}</span></div></div><div class="pill-actions"><button class="btn-icon" data-action="edit" data-pill="${pill.id}" aria-label="Edit ${Utils.esc(pill.name)}">✏️</button><button class="btn-icon is-danger" data-action="delete" data-pill="${pill.id}" aria-label="Remove ${Utils.esc(pill.name)}">🗑️</button></div></div></article>`).join('')}</div>`;
+    list.innerHTML=html;
+  },
+
+  _histPage:0,
+  history() { this._histPage=0; this._historyPage(true); this._weekChart(); },
+  _historyPage(reset) {
+    const s=State.get(), listEl=document.getElementById('pc-history-list'), filter=s.ui.historyFilter;
+    const filtered=filter==='all'?s.history:filter==='taken'?s.history.filter(h=>!h.missed):s.history.filter(h=>h.missed);
+    if (!filtered.length) { listEl.innerHTML=`<div class="empty-state"><div class="empty-icon" aria-hidden="true">📊</div><h3>No history yet</h3><p>Your log will appear here as you record doses each day.</p></div>`; return; }
+    const groups={};
+    filtered.forEach(h=>{ if(!groups[h.date])groups[h.date]=[]; groups[h.date].push(h); });
+    const allDates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+    const pageEnd=(this._histPage+1)*HISTORY_PAGE, pageDates=allDates.slice(0,pageEnd), hasMore=allDates.length>pageEnd;
+    const html=pageDates.map(date=>{
+      const label=this._fmtDate(date), entries=groups[date].sort((a,b)=>a.doseTime.localeCompare(b.doseTime));
+      const pct=Math.round(entries.filter(e=>!e.missed).length/entries.length*100);
+      return `<div class="history-date-group"><div class="history-date-label"><span>${label}</span><span style="color:${pct>=80?'var(--c-mint)':pct>=50?'var(--c-amber)':'var(--c-rose)'};font-weight:700">${pct}%</span></div>${entries.map(e=>`<div class="history-entry"><div class="h-dot" style="background:${Utils.esc(e.color||'var(--c-sage)')}" aria-hidden="true"></div><div class="h-name">${Utils.esc(e.pillName)}</div>${e.dose?`<span class="h-dose">${Utils.esc(e.dose)}</span>`:''}<span class="h-time">${e.doseTime}</span><span class="h-status ${e.missed?'h-missed':'h-taken'}">${e.missed?'Missed':e.takenAt?'Taken '+new Date(e.takenAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Taken'}</span></div>`).join('')}</div>`;
+    }).join('');
+    if (reset) listEl.innerHTML=html; else { listEl.querySelector('.load-more-btn')?.remove(); listEl.insertAdjacentHTML('beforeend',html); }
+    if (hasMore) { const btn=document.createElement('button'); btn.className='load-more-btn'; btn.textContent=`Show more (${allDates.length-pageEnd} more days)`; btn.addEventListener('click',()=>{this._histPage++;this._historyPage(false);}); listEl.appendChild(btn); }
+  },
+  _weekChart() {
+    const chartEl=document.getElementById('pc-week-chart'), s=State.get(), today=new Date(); let totalPct=0,validDays=0;
+    const bars=Array.from({length:7},(_,i)=>{
+      const d=new Date(today); d.setDate(d.getDate()-6+i);
+      const str=`${d.getFullYear()}-${Utils.pad(d.getMonth()+1)}-${Utils.pad(d.getDate())}`;
+      const day=s.history.filter(h=>h.date===str), tot=day.length, tak=day.filter(h=>!h.missed).length;
+      const pct=tot>0?Math.round((tak/tot)*100):null;
+      if (pct!==null){totalPct+=pct;validDays++;}
+      return {pct,cls:pct===null?'none':pct>=80?'good':'partial',height:pct===null?4:Math.max(4,pct*0.52),day:d.toLocaleDateString('en',{weekday:'short'}).slice(0,2)};
+    });
+    const weekEl=document.getElementById('pc-week-pct');
+    if (weekEl) weekEl.textContent=validDays>0?Math.round(totalPct/validDays)+'%':'–';
+    // Build accessible text description for screen readers
+    const ariaDesc=bars.map((b,i)=>{
+      const d=new Date(); d.setDate(d.getDate()-6+i);
+      return d.toLocaleDateString('en',{weekday:'long'})+': '+(b.pct!==null?b.pct+'%':'no data');
+    }).join(', ');
+    if(chartEl) {
+      chartEl.setAttribute('aria-label','Weekly adherence: '+ariaDesc);
+      chartEl.innerHTML=bars.map(b=>`<div class="week-bar-wrap"><div class="week-bar ${b.cls}" style="height:${b.height}px" role="presentation"></div><span class="week-day-lbl">${b.day}</span><span class="week-pct">${b.pct!==null?b.pct+'%':''}</span></div>`).join('');
+    }
+  },
+  _fmtDate(ds) {
+    const today=Utils.todayKey(), yd=new Date(); yd.setDate(yd.getDate()-1);
+    if (ds===today) return 'Today'; if (ds===yd.toISOString().slice(0,10)) return 'Yesterday';
+    const [y,m,d]=ds.split('-').map(Number);
+    return new Date(y, m-1, d).toLocaleDateString('en-IN',{weekday:'long',month:'long',day:'numeric'});
+  }
+};
+
+/* ── ui ── */
+
+const UI = {
+  _toastTid: null,
+  toast(msg) {
+    const t=document.getElementById('pc-toast'), w=document.getElementById('pc-toast-wrap'); if(!t||!w) return;
+    t.textContent=msg; w.classList.add('show'); clearTimeout(this._toastTid);
+    this._toastTid=setTimeout(()=>w.classList.remove('show'),3400);
+  },
+  _undoTid: null,
+  showUndoToast(msg) {
+    const t=document.getElementById('pc-undo-toast');
+    const tw=document.getElementById('pc-toast-wrap');
+    if(!t) return;
+    document.getElementById('pc-undo-msg').textContent=msg;
+    // Unhide first, then show (so CSS transition plays)
+    t.classList.remove('hidden');
+    requestAnimationFrame(()=> requestAnimationFrame(()=> t.classList.add('show')));
+    if(tw) tw.classList.add('above-undo');
+    clearTimeout(this._undoTid);
+    // Auto-dismiss after 5 seconds
+    this._undoTid=setTimeout(()=> this.hideUndoToast(), 5000);
+  },
+  hideUndoToast() {
+    const t=document.getElementById('pc-undo-toast');
+    const tw=document.getElementById('pc-toast-wrap');
+    if(!t) return;
+    t.classList.remove('show');
+    if(tw) tw.classList.remove('above-undo');
+    clearTimeout(this._undoTid);
+    // Re-hide after transition finishes so it doesn't sit behind nav
+    setTimeout(()=> t.classList.add('hidden'), 320);
+    State.get().runtime.undoPill=null;
+  },
+
+  openModal({icon,title,body,confirmText,confirmCls,onConfirm}) {
+    document.getElementById('modal-icon').textContent=icon||'⚠️';
+    document.getElementById('modal-title').textContent=title||'Are you sure?';
+    document.getElementById('modal-body').textContent=body||'';
+    const btn=document.getElementById('btn-modal-confirm'); btn.textContent=confirmText||'Confirm'; btn.className='btn '+(confirmCls||'btn-primary');
+    State.get().runtime.modalCallback=onConfirm; document.getElementById('pc-modal').classList.add('open');
+    document.getElementById('btn-modal-cancel').focus();
+  },
+  closeModal() { document.getElementById('pc-modal').classList.remove('open'); State.get().runtime.modalCallback=null; },
+  confirmModal() {
+    /* FIX: capture callback BEFORE closeModal() nulls it */
+    const cb = State.get().runtime.modalCallback;
+    this.closeModal();
+    if (cb) cb();
+  },
+
+  openSheet(pillId) {
+    const s=State.get(); s.ui.editingPillId=pillId||null; s.ui.isArchivedEdit=false; this._resetForm();
+    if (pillId) {
+      const p=s.pills.find(x=>x.id===pillId); if (!p) return;
+      document.getElementById('sheet-title').textContent='Edit medication';
+      document.getElementById('btn-save-pill').textContent='Save changes';
+      document.getElementById('archive-row').classList.remove('hidden');
+      this._populateForm(p);
+    } else {
+      document.getElementById('sheet-title').textContent='Add medication';
+      document.getElementById('btn-save-pill').textContent='Add medication';
+      document.getElementById('archive-row').classList.add('hidden');
+    }
+    document.getElementById('pc-sheet-overlay').classList.add('open');
+    document.getElementById('pc-sheet').classList.add('open');
+    document.getElementById('pc-sheet').scrollTop=0;
+    document.body.style.overflow='hidden';
+    document.getElementById('pc-sheet-overlay').removeAttribute('aria-hidden');
+    document.getElementById('pc-sheet').removeAttribute('aria-hidden');
+    setTimeout(()=>{ document.getElementById('f-name').focus(); this._startFocusTrap(); },320);
+  },
+  closeSheet() {
+    const _sheet = document.getElementById('pc-sheet');
+    _sheet.classList.remove('open');
+    _sheet.style.transform = '';
+    _sheet.style.transition = '';
+    _sheet.style.bottom = ''; // reset any VirtualKeyboard offset
+    document.getElementById('pc-sheet-overlay').classList.remove('open');
+    document.body.style.overflow = ''; State.get().ui.editingPillId = null;
+    document.getElementById('pc-sheet-overlay').setAttribute('aria-hidden','true');
+    document.getElementById('pc-sheet').setAttribute('aria-hidden','true');
+    document.getElementById('btn-add-med').focus();
+    document.removeEventListener('keydown', this._focusTrapFn);
+  },
+
+  // Focus trap — keeps Tab key inside the sheet while open
+  _focusTrapFn: null,
+  _startFocusTrap() {
+    const sheet=document.getElementById('pc-sheet');
+    const focusable='button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    this._focusTrapFn=(e)=>{
+      if(e.key==='Escape'){UI.closeSheet();return;}
+      if(e.key!=='Tab') return;
+      const els=[...sheet.querySelectorAll(focusable)].filter(el=>!el.closest('[hidden]')&&el.offsetParent!==null);
+      if(!els.length) return;
+      const first=els[0], last=els[els.length-1];
+      if(e.shiftKey){ if(document.activeElement===first){e.preventDefault();last.focus();} }
+      else          { if(document.activeElement===last) {e.preventDefault();first.focus();} }
+    };
+    document.addEventListener('keydown', this._focusTrapFn);
+  },
+
+  /* FIX: Virtual keyboard handling — prevents inputs being hidden under keyboard on iOS/Android */
+  _initKeyboardHandling() {
+    const sheet = document.getElementById('pc-sheet');
+    // When input focused inside sheet, scroll it into view after keyboard opens
+    sheet.addEventListener('focusin', (e) => {
+      if (!sheet.classList.contains('open')) return;
+      if (!['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
+      setTimeout(() => {
+        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    });
+  },
+
+  _resetForm() {
+    ['f-name','f-dose','f-notes','f-time-once','f-time-custom','f-time-weekly','f-time-monthly'].forEach(id=>{
+      const el=document.getElementById(id); if(el){el.value='';el.classList.remove('is-error');}
+    });
+    document.getElementById('f-freq').value='once'; document.getElementById('f-category').value='general';
+    document.getElementById('f-priority').value='normal'; document.getElementById('f-month-day').value='';
+    document.getElementById('f-interval-hrs').value='';
+    document.getElementById('interval-hint').textContent='';
+    document.getElementById('monthly-day-warn')?.classList.add('hidden');
+    document.getElementById('dose-preview').innerHTML='Set first dose time and interval to preview your schedule';
+    document.querySelectorAll('.day-chip').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false');});
+    document.querySelectorAll('.time-preset-chip').forEach(c=>c.classList.remove('active'));
+    State.get().ui.selectedWeekDays=[]; State.get().ui.selectedFood='any'; State.get().ui.isArchivedEdit=false;
+    document.querySelectorAll('#food-chips .chip').forEach(c=>c.classList.remove('active'));
+    document.querySelector('#food-chips .chip[data-food="any"]')?.classList.add('active');
+    State.get().ui.selectedColor=COLORS[0];
+    document.querySelectorAll('.color-dot').forEach((d,i)=>{d.classList.toggle('selected',i===0);d.setAttribute('aria-checked',i===0?'true':'false');});
+    document.getElementById('duplicate-warning')?.classList.add('hidden');
+    document.getElementById('chip-active')?.classList.add('active'); document.getElementById('chip-archived')?.classList.remove('active');
+    document.getElementById('advanced-body').classList.remove('open');
+    const at=document.getElementById('advanced-toggle'); at.classList.remove('open'); at.setAttribute('aria-expanded','false');
+    this._onFreqChange();
+  },
+
+  _populateForm(p) {
+    document.getElementById('f-name').value=p.name; document.getElementById('f-dose').value=p.dose||'';
+    document.getElementById('f-notes').value=p.notes||''; document.getElementById('f-freq').value=p.freq;
+    document.getElementById('f-category').value=p.category||'general'; document.getElementById('f-priority').value=p.priority||'normal';
+    State.get().ui.isArchivedEdit=!!p.archived;
+    document.getElementById('chip-active')?.classList.toggle('active',!p.archived);
+    document.getElementById('chip-archived')?.classList.toggle('active',!!p.archived);
+    if (p.freq==='once')    document.getElementById('f-time-once').value=p.time||'';
+    if (p.freq==='custom')  { document.getElementById('f-time-custom').value=p.time||''; document.getElementById('f-interval-hrs').value=p.intervalHours||''; Form.onCustomInput(); }
+    if (p.freq==='weekly')  { document.getElementById('f-time-weekly').value=p.time||''; (p.weekDays||[]).forEach(d=>{State.get().ui.selectedWeekDays.push(Number(d));const c=document.querySelector(`.day-chip[data-day="${d}"]`);if(c){c.classList.add('active');c.setAttribute('aria-pressed','true');}}); }
+    if (p.freq==='monthly') { document.getElementById('f-time-monthly').value=p.time||''; document.getElementById('f-month-day').value=p.monthDay||''; const mw=document.getElementById('monthly-day-warn'); if(mw) mw.classList.toggle('hidden',!p.monthDay||p.monthDay<=28); }
+    const food=p.food||'any'; State.get().ui.selectedFood=food;
+    document.querySelectorAll('#food-chips .chip').forEach(c=>c.classList.toggle('active',c.dataset.food===food));
+    const color=p.color||COLORS[0]; State.get().ui.selectedColor=color;
+    document.querySelectorAll('.color-dot').forEach(d=>{const sel=d.dataset.color===color;d.classList.toggle('selected',sel);d.setAttribute('aria-checked',sel?'true':'false');});
+    this._onFreqChange();
+  },
+
+  _onFreqChange() {
+    const freq=document.getElementById('f-freq').value;
+    const map={once:'field-once',custom:'field-custom',weekly:'field-weekly',monthly:'field-monthly'};
+    ['field-once','field-custom','field-weekly','field-monthly'].forEach(id=>document.getElementById(id).classList.remove('show'));
+    document.getElementById(map[freq])?.classList.add('show');
+    // Hide monthly day warning when switching away from monthly
+    if(freq!=='monthly') document.getElementById('monthly-day-warn')?.classList.add('hidden');
+  },
+
+  hideBanner(id)       { document.getElementById(id)?.classList.add('hidden'); },
+  updateNotifBanner()  { const el=document.getElementById('pc-notif-banner'); if(el) el.classList.toggle('hidden',('Notification'in window&&Notification.permission==='granted')||Store.read('notif_dismissed',false)); },
+
+  showPage(pageId, btn) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('active');b.removeAttribute('aria-current');});
+    document.getElementById('page-'+pageId)?.classList.add('active');
+    btn.classList.add('active'); btn.setAttribute('aria-current','page');
+    State.setUi({activePage:pageId});
+    if (pageId==='history')  Render.history();
+    if (pageId==='meds')     Render.meds();
+    if (pageId==='settings') Diagnostics.refresh();
+    if (pageId==='today')    Render.today();
+    /* FIX: announce navigation change to screen readers */
+    const labels={today:"Today's medications",meds:'Medications',history:'History',settings:'Settings'};
+    Utils.announce(labels[pageId] || pageId);
+  }
+};
+
+/* ── form + sw + events + init ── */
+
+const Form = {
+  onCustomInput() {
+    const time   = document.getElementById('f-time-custom').value;
+    const ivHrs  = parseFloat(document.getElementById('f-interval-hrs').value);
+    const hint   = document.getElementById('interval-hint');
+    const prev   = document.getElementById('dose-preview');
+
+    if (!ivHrs) {
+      hint.textContent = '';
+      prev.innerHTML = 'Set first dose time and interval to preview your schedule';
+      return;
+    }
+
+    const ivMins = Math.round(ivHrs * 60);
+    if (ivMins < 10) {
+      hint.className = 'hint bad';
+      hint.textContent = 'Minimum interval is 10 minutes';
+      prev.innerHTML = 'Choose a longer interval';
+      return;
+    }
+
+    // Build human-readable label
+    const h = Math.floor(ivMins/60), m = ivMins%60;
+    const ivLabel = h > 0 ? (m > 0 ? `${h}h ${m}min` : `${h}h`) : `${m}min`;
+    hint.className = 'hint good';
+    hint.textContent = `Repeats every ${ivLabel}`;
+
+    if (!time) {
+      prev.innerHTML = `Every <strong>${ivLabel}</strong> — set first dose time to see your full schedule`;
+      return;
+    }
+
+    // Calculate doses from first-dose time until midnight
+    const doses = Schedule.getDosesForDate({ freq:'custom', time, intervalHours:ivHrs }, new Date());
+    const lastDose = doses[doses.length - 1];
+    prev.innerHTML =
+      `<strong>${doses.length} dose${doses.length!==1?'s':''} today</strong>` +
+      ` <span class="times">→ ${doses.map(Utils.formatTime12).join(' → ')}</span>` +
+      `<br><span style="color:var(--c-text3);font-size:var(--fs-xs)">Last dose at ${Utils.formatTime12(lastDose)} · stops at midnight</span>`;
+  },
+  checkDuplicate() {
+    const name=document.getElementById('f-name').value.trim(), warn=document.getElementById('duplicate-warning');
+    if (warn) warn.classList.toggle('hidden',!Schedule.isDuplicate(name,State.get().ui.editingPillId));
+  }
+};
+
+const SW = {
+  async init() {
+    if (!('serviceWorker' in navigator)) {
+      this._status('warn', '⚠ Reminders need a modern browser');
+      return;
+    }
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      await navigator.serviceWorker.ready;
+      State.get().runtime.swReg = reg;
+      this._status('ok', '● Background reminders active');
+      reg.addEventListener('updatefound', () => {
+        const inst = reg.installing; if (!inst) return;
+        inst.addEventListener('statechange', function () {
+          if (this.state === 'installed' && navigator.serviceWorker.controller)
+            document.getElementById('pc-update-banner').classList.remove('hidden');
+        });
+      });
+      if (reg.waiting && navigator.serviceWorker.controller)
+        document.getElementById('pc-update-banner').classList.remove('hidden');
+      this.syncSnapshot();
+      Diagnostics.refresh();
+    } catch (e) {
+      // sw.js not found or blocked — use in-page notifications only
+      console.warn('[PillCare] SW not available:', e.message);
+      this._status('warn', '● In-page reminders (install as app for background)');
+    }
+  },
+
+  _status(cls, msg) {
+    const el = document.getElementById('pc-sw-status');
+    if (el) { el.className = 'sw-badge ' + cls; el.innerHTML = '<span class="sw-dot" aria-hidden="true"></span> ' + msg; }
+  },
+
+  reload() {
+    const r = State.get().runtime.swReg;
+    if (r?.waiting) r.waiting.postMessage({ type: 'SKIP_WAITING' });
+    setTimeout(() => location.reload(), 300);
+  },
+
+  syncSnapshot() {
+    const r = State.get().runtime.swReg;
+    if (!r?.active) return;
+    try {
+      const s = State.get();
+      const firedKeys = (() => { try { return JSON.parse(localStorage.getItem('pc_fired_keys') || '[]'); } catch(e) { return []; } })();
+      r.active.postMessage({
+        type: 'UPDATE_SNAPSHOT',
+        snapshot: { pills: s.pills, taken: s.takenToday, snoozed: Store.read('snoozed', []), firedKeys }
+      });
+    } catch(e) {}
+  }
+};
+
+function updateClock() {
+  const now=new Date(), el=document.getElementById('pc-clock');
+  if (el) el.textContent=Utils.hmStr(now.getHours(),now.getMinutes());
+  const gr=document.getElementById('pc-greeting'); if(gr) gr.textContent=Utils.greeting();
+  const dt=document.getElementById('pc-today-date'); if(dt) dt.textContent=now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function initEvents() {
+  // Navigation
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>UI.showPage(btn.dataset.page,btn)));
+  document.getElementById('btn-add-med').addEventListener('click',()=>UI.openSheet());
+  document.getElementById('pc-sheet-overlay').addEventListener('click',()=>UI.closeSheet());
+
+  // Swipe down on sheet handle to dismiss
+  (()=>{
+    const sheet=document.getElementById('pc-sheet');
+    const handle=sheet.querySelector('.sheet-handle');
+    let startY=0, startScroll=0, dragging=false;
+    function onStart(e){
+      // Only start drag from handle or if sheet is scrolled to top
+      const isHandle=e.target.closest('.sheet-handle');
+      if(!isHandle && sheet.scrollTop>4) return;
+      startY=e.touches?e.touches[0].clientY:e.clientY;
+      startScroll=sheet.scrollTop;
+      dragging=true;
+      sheet.style.transition='none';
+    }
+    function onMove(e){
+      if(!dragging) return;
+      const y=(e.touches?e.touches[0].clientY:e.clientY)-startY;
+      if(y<0) return; // don't allow dragging up
+      sheet.style.transform=`translateY(${y}px)`;
+    }
+    function onEnd(e){
+      if(!dragging){return;}
+      dragging=false;
+      sheet.style.transition='';
+      const y=(e.changedTouches?e.changedTouches[0].clientY:e.clientY)-startY;
+      if(y>100){ UI.closeSheet(); }
+      else { sheet.style.transform=''; sheet.style.transition=''; }
+    }
+    sheet.addEventListener('touchstart',onStart,{passive:true});
+    sheet.addEventListener('touchmove',onMove,{passive:true});
+    sheet.addEventListener('touchend',onEnd,{passive:true});
+  })();
+  document.getElementById('btn-cancel-sheet').addEventListener('click',()=>UI.closeSheet());
+  document.getElementById('btn-save-pill').addEventListener('click',()=>Actions.savePill());
+  document.getElementById('f-freq').addEventListener('change',()=>UI._onFreqChange());
+  document.getElementById('f-month-day').addEventListener('change',()=>{
+    const v=parseInt(document.getElementById('f-month-day').value);
+    const w=document.getElementById('monthly-day-warn');
+    if(w) w.classList.toggle('hidden', !v || v<=28);
+  });
+  document.getElementById('f-interval-hrs').addEventListener('change',()=>Form.onCustomInput());
+  document.getElementById('f-time-custom').addEventListener('input',()=>Form.onCustomInput());
+  document.getElementById('f-name').addEventListener('input',()=>Form.checkDuplicate());
+
+  // Preset chips
+  document.querySelectorAll('[data-preset]').forEach(c=>c.addEventListener('click',()=>{
+    const parts=c.dataset.preset.split(':');
+    const fieldId=parts[0], val=parts.slice(1).join(':');
+    document.getElementById(fieldId).value=val;
+    // highlight active chip within same group
+    const group=c.closest('.chips');
+    if(group) group.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+  }));
+  document.querySelectorAll('[data-custom-preset]').forEach(c=>c.addEventListener('click',()=>{
+    const parts=c.dataset.customPreset.split(':');
+    // format: "HH:MM:intervalHours"  e.g. "08:00:6"
+    const time=parts[0]+':'+parts[1], ivHrs=parts[2];
+    document.getElementById('f-time-custom').value=time;
+    document.getElementById('f-interval-hrs').value=ivHrs;
+    // highlight active preset
+    document.querySelectorAll('[data-custom-preset]').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    Form.onCustomInput();
+  }));
+
+  // Weekday picker
+  document.getElementById('weekday-picker').addEventListener('click',e=>{
+    const c=e.target.closest('.day-chip'); if(!c) return;
+    const day=parseInt(c.dataset.day), active=c.classList.toggle('active'); c.setAttribute('aria-pressed',active);
+    const days=State.get().ui.selectedWeekDays; State.get().ui.selectedWeekDays=active?[...days.filter(d=>d!==day),day]:days.filter(d=>d!==day);
+  });
+
+  // Food chips
+  document.getElementById('food-chips').addEventListener('click',e=>{
+    const c=e.target.closest('.chip[data-food]'); if(!c) return;
+    document.querySelectorAll('#food-chips .chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); State.get().ui.selectedFood=c.dataset.food;
+  });
+
+  // Color picker
+  document.getElementById('color-picker').addEventListener('click',e=>{
+    const d=e.target.closest('.color-dot'); if(!d) return;
+    document.querySelectorAll('.color-dot').forEach(x=>{x.classList.remove('selected');x.setAttribute('aria-checked','false');}); d.classList.add('selected'); d.setAttribute('aria-checked','true'); State.get().ui.selectedColor=d.dataset.color;
+  });
+  document.getElementById('color-picker').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.click();}});
+
+  // Archive chips
+  document.getElementById('archive-row').addEventListener('click',e=>{
+    const c=e.target.closest('[data-archive]'); if(!c) return;
+    const archived=c.dataset.archive==='true'; State.get().ui.isArchivedEdit=archived;
+    document.getElementById('chip-active').classList.toggle('active',!archived); document.getElementById('chip-archived').classList.toggle('active',archived);
+  });
+
+  // Advanced toggle
+  document.getElementById('advanced-toggle').addEventListener('click',function(){
+    const body=document.getElementById('advanced-body'), open=body.classList.toggle('open'); this.classList.toggle('open',open); this.setAttribute('aria-expanded',open);
+  });
+
+  // Modal
+  document.getElementById('btn-modal-cancel').addEventListener('click',()=>UI.closeModal());
+  document.getElementById('btn-modal-confirm').addEventListener('click',()=>UI.confirmModal());
+
+  // Undo, banners, notifications, install
+  document.getElementById('btn-undo').addEventListener('click',()=>Actions.undoDelete());
+  document.getElementById('btn-enable-notif').addEventListener('click',()=>Notif.request());
+  document.getElementById('btn-dismiss-notif').addEventListener('click',()=>{Store.write('notif_dismissed',true);UI.hideBanner('pc-notif-banner');});
+  document.getElementById('btn-install').addEventListener('click',()=>{const i=State.get().runtime.deferredInstall;if(!i)return;i.prompt();i.userChoice.then(r=>{if(r.outcome==='accepted'){UI.hideBanner('pc-install-banner');State.get().runtime.deferredInstall=null;}});});
+  document.getElementById('btn-dismiss-install').addEventListener('click',()=>UI.hideBanner('pc-install-banner'));
+  document.getElementById('pc-update-banner').addEventListener('click',()=>SW.reload());
+  document.getElementById('pc-update-banner').addEventListener('keydown',e=>{if(e.key==='Enter')SW.reload();});
+
+  // Settings
+  document.getElementById('btn-test-notif').addEventListener('click',()=>Notif.sendTest());
+  document.getElementById('btn-req-notif').addEventListener('click',()=>Notif.request());
+  document.getElementById('btn-export').addEventListener('click',()=>Actions.exportData());
+  document.getElementById('btn-import').addEventListener('click',()=>document.getElementById('pc-import-file').click());
+  document.getElementById('pc-import-file').addEventListener('change',e=>{ const file=e.target.files[0]; e.target.value=''; Actions.importData(file); });
+  document.getElementById('btn-clear-all').addEventListener('click',()=>UI.openModal({
+    icon:'🗑️',
+    title:'Clear all data?',
+    body:'This will permanently erase all your medications, history and settings. This cannot be undone — export a backup first if you need it.',
+    confirmText:'Yes, clear everything',
+    confirmCls:'btn-danger',
+    onConfirm:() => {
+      /* FIX: only remove PillCare-prefixed keys — never wipe unrelated localStorage data */
+      const prefix = 'pc_';
+      Object.keys(localStorage)
+        .filter(k => k.startsWith(prefix))
+        .forEach(k => localStorage.removeItem(k));
+      Utils.announce('All data cleared');
+      location.reload();
+    }
+  }));
+  document.querySelectorAll('.toggle[data-setting]').forEach(t=>t.addEventListener('click',()=>Settings.toggle(t.dataset.setting)));
+
+  // Pill list — event delegation
+  function handlePillAction(e) {
+    const t=e.target.closest('[data-action]'); if(!t) return;
+    const action=t.dataset.action, pillId=t.dataset.pill, idx=parseInt(t.dataset.idx);
+    switch(action) {
+      case 'mark':      Actions.markDose(pillId,idx);  break;
+      case 'snooze':    Actions.snoozeDose(pillId,idx); break;
+      case 'edit':      UI.openSheet(pillId);           break;
+      case 'delete':    Actions.deletePill(pillId);     break;
+      case 'duplicate': Actions.duplicatePill(pillId);  break;
+      case 'toggle-archived': { const al=document.getElementById('archived-list'),open=!al.hidden; al.hidden=open; t.setAttribute('aria-expanded',!open); break; }
+      case 'dismiss-missed': { Store.write('missed_banner_'+Utils.todayKey(),true); document.getElementById('pc-missed-banner').classList.add('hidden'); break; }
+    }
+  }
+  document.getElementById('pc-pill-list').addEventListener('click',handlePillAction);
+  document.getElementById('pc-meds-list').addEventListener('click',handlePillAction);
+
+  // History filters
+  document.querySelector('.history-filters').addEventListener('click',e=>{
+    const btn=e.target.closest('.chip[data-filter]'); if(!btn) return;
+    document.querySelectorAll('.history-filters .chip').forEach(c=>{c.classList.remove('active');c.setAttribute('aria-pressed','false');}); btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+    State.setUi({historyFilter:btn.dataset.filter}); Render.history();
+  });
+
+  // Onboarding
+  document.getElementById('btn-finish-onboarding').addEventListener('click',()=>{Store.write('onboarded',true);document.getElementById('pc-onboarding').classList.add('hidden');if('Notification'in window&&Notification.permission==='default')Notif.request();});
+
+  // Keyboard: Escape
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Escape') return;
+    if(document.getElementById('pc-modal').classList.contains('open')){UI.closeModal();return;}
+    if(document.getElementById('pc-sheet').classList.contains('open')){UI.closeSheet();return;}
+  });
+
+  // PWA
+  window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();State.get().runtime.deferredInstall=ev;document.getElementById('pc-install-banner').classList.remove('hidden');});
+  window.addEventListener('appinstalled',()=>{UI.hideBanner('pc-install-banner');UI.toast('PillCare added to home screen');});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible') {
+      UI.updateNotifBanner();
+      /* FIX: run reminder check immediately on tab focus — browser throttles timers in background */
+      Reminders.check();
+      /* FIX: detect midnight rollover when returning to tab after a long absence */
+      const today = Utils.todayKey();
+      if (Reminders._lastTodayKey && Reminders._lastTodayKey !== today) {
+        Persist.load(); Render.all();
+      }
+      Reminders._lastTodayKey = today;
+    }
+  });
+
+  // SW messages
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', event => {
+      const msg = event.data; if (!msg?.type) return;
+
+      if (msg.type === 'DOSE_FIRED') {
+        // SW fired a notification — record in firedKeys so Reminders.check() won't duplicate
+        try {
+          const keys = JSON.parse(localStorage.getItem('pc_fired_keys') || '[]');
+          if (!keys.includes(msg.key)) { keys.push(msg.key); localStorage.setItem('pc_fired_keys', JSON.stringify(keys)); }
+        } catch(e) {}
+        Render.today(); // refresh UI to show reminder is active
+      }
+      else if (msg.type === 'STORE_SNOOZE') {
+        const snoozed = Store.read('snoozed', []);
+        const entry = { id: msg.pillId+'-'+msg.fireAt, pillId: msg.pillId, name: msg.name, dose: msg.dose, time: msg.time, fireAt: msg.fireAt };
+        if (!snoozed.find(s => s.id === entry.id)) { snoozed.push(entry); Store.write('snoozed', snoozed); }
+        UI.toast('Snoozed for 5 minutes');
+        SW.syncSnapshot();
+      }
+      else if (msg.type === 'MARK_TAKEN') {
+        const pill = State.get().pills.find(p => p.id === msg.pillId);
+        if (pill) {
+          const doses = Schedule.getDoses(pill);
+          let idx = doses.indexOf(msg.doseTime); if (idx < 0) idx = 0;
+          const key = pill.id + '_dose' + idx;
+          if (!State.get().takenToday[key]) {
+            State.get().takenToday[key] = new Date().toISOString();
+            Persist.saveTaken(); Chains.stop(pill.id, idx);
+            Persist.logHistory({ pillId: pill.id, pillName: pill.name, color: pill.color, dose: pill.dose, date: Utils.todayKey(), doseTime: msg.doseTime || doses[idx], takenAt: new Date().toISOString(), missed: false });
+            Render.all(); UI.toast(`✓ ${pill.name} recorded`);
+            Utils.announce(`${pill.name} recorded as taken`);
+          }
+        }
+      }
+      else if (msg.type === 'NEW_VERSION_READY') {
+        document.getElementById('pc-update-banner').classList.remove('hidden');
+      }
+    });
+  }
+}
+
+(async function init() {
+  // Populate month-day options
+  const sel=document.getElementById('f-month-day');
+  for (let d=1;d<=31;d++) { const o=document.createElement('option'); o.value=d; o.textContent=Utils.ordinal(d); sel.appendChild(o); }
+  // Sync version display from constant
+  const vEl=document.getElementById('pc-version-display');
+  if(vEl) vEl.textContent=APP_VERSION+' · Local-first';
+  initEvents();
+  Persist.load();
+  if (!Store.read('onboarded',false)) document.getElementById('pc-onboarding').classList.remove('hidden');
+  Settings.apply();
+  UI.updateNotifBanner();
+  UI._initKeyboardHandling();
+  await SW.init();
+  // Sync pills+snoozed to SW right after init so it can schedule alarms immediately
+  SW.syncSnapshot();
+  Render.all();
+  updateClock();
+  setInterval(updateClock, 1000);
+  setInterval(() => Reminders.check(), 10000);
+  setInterval(() => { if (State.get().pills.length > 0) Render.today(); }, 30000);
+  // Also re-sync SW every 5 minutes to reschedule any drifted timers
+  setInterval(() => SW.syncSnapshot(), 5 * 60 * 1000);
+  Reminders.check();
+
+  // Handle manifest shortcut URLs: ?page=today  /  ?action=add
+  const params = new URLSearchParams(window.location.search);
+  const pageParam   = params.get('page');
+  const actionParam = params.get('action');
+  if (pageParam) {
+    /* FIX: validate against explicit allowlist — prevents XSS via crafted URL */
+    const allowedPages = ['today','meds','history','settings'];
+    if (allowedPages.includes(pageParam)) {
+      const btn = document.querySelector(`.nav-btn[data-page="${pageParam}"]`);
+      if (btn) UI.showPage(pageParam, btn);
+    }
+  }
+  if (actionParam === 'add') {
+    // Small delay so the sheet animation plays after the page paints
+    setTimeout(() => UI.openSheet(), 350);
+  }
+})();
+</script>
+</body>
+</html>
